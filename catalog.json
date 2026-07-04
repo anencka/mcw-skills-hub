@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "count": 25,
+  "count": 26,
   "entries": [
     {
       "name": "biosketch-and-other-support",
@@ -269,6 +269,23 @@
       "curated": false,
       "has_blueprint": false,
       "path": "skills/reference-management"
+    },
+    {
+      "name": "reference-manager-bridge",
+      "description": "Move references between the agent and the operator's reference manager \u2014 EndNote (RIS/XML round-trip), Zotero (API), Mendeley, ReadCube/Papers \u2014 so literature work lands in the library they actually use.",
+      "version": "1.0.0",
+      "category": "reference",
+      "tags": [
+        "reference",
+        "endnote",
+        "zotero",
+        "mendeley",
+        "ris",
+        "bibtex"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/reference-manager-bridge"
     },
     {
       "name": "reporting-checklists",
