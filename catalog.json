@@ -1,0 +1,403 @@
+{
+  "schema": 1,
+  "count": 25,
+  "entries": [
+    {
+      "name": "biosketch-and-other-support",
+      "description": "Draft or update an NIH biosketch or Other Support document from the operator's real publication and grant record (ORCID, PubMed, NIH RePORTER) \u2014 current format, no fabricated entries.",
+      "version": "1.0.0",
+      "category": "grants",
+      "tags": [
+        "grants",
+        "biosketch",
+        "other-support",
+        "nih",
+        "orcid"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/biosketch-and-other-support"
+    },
+    {
+      "name": "calendar",
+      "description": "Read the operator's calendar (agenda, free/busy) and, with approval, create events via CalDAV. Pairs with email-and-scheduling for meeting prep and reminders.",
+      "version": "1.0.0",
+      "category": "communication",
+      "tags": [
+        "calendar",
+        "caldav",
+        "scheduling",
+        "agenda",
+        "events"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/calendar"
+    },
+    {
+      "name": "custom-tab",
+      "description": "Build or update the operator's \"Custom\" tab \u2014 a private web surface (HTML/CSS/JS) served from ~/custom/, with server-side save/load so pages can persist data. Use when asked to make a custom page, dashboard, mini-app, viewer, planner, or anything that should show up under the Custom tab.",
+      "version": "1.1.0",
+      "category": "coding",
+      "tags": [
+        "web",
+        "html",
+        "dashboard",
+        "custom-tab",
+        "ui"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/custom-tab"
+    },
+    {
+      "name": "data-processing",
+      "description": "Build reproducible data pipelines \u2014 load, clean, transform, and validate datasets \u2014 with sanity checks at every step and no silent data loss.",
+      "version": "1.0.0",
+      "category": "data",
+      "tags": [
+        "data",
+        "pipeline",
+        "cleaning",
+        "pandas",
+        "reproducibility"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/data-processing"
+    },
+    {
+      "name": "data-visualization",
+      "description": "Produce clear, honest, publication-quality figures \u2014 right chart for the data, accurate encodings, readable labels \u2014 in the operator's preferred plotting stack.",
+      "version": "1.0.0",
+      "category": "data",
+      "tags": [
+        "visualization",
+        "plots",
+        "figures",
+        "matplotlib"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/data-visualization"
+    },
+    {
+      "name": "deadline-sentinel",
+      "description": "The daily deadline watch \u2014 read the task registry, escalate what's overdue or entering its warning window, and email the operator a short, honest nag. Designed to run unattended on a schedule.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "tags": [
+        "productivity",
+        "deadlines",
+        "digest",
+        "cron",
+        "sentinel"
+      ],
+      "curated": false,
+      "has_blueprint": true,
+      "path": "skills/deadline-sentinel"
+    },
+    {
+      "name": "email-and-scheduling",
+      "description": "Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage \u2014 in the operator's voice, never auto-send, no PHI in messages.",
+      "version": "2.2.0",
+      "category": "communication",
+      "tags": [
+        "email",
+        "scheduling",
+        "communication",
+        "admin"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/email-and-scheduling"
+    },
+    {
+      "name": "funding-opportunity-digest",
+      "description": "Find and rank live funding opportunities matched to the operator's research profile \u2014 NIH, Grants.gov, NSF \u2014 and deliver a concise digest. Works one-off or as a scheduled cron digest.",
+      "version": "1.0.0",
+      "category": "grants",
+      "tags": [
+        "grants",
+        "funding",
+        "nih",
+        "digest",
+        "cron"
+      ],
+      "curated": false,
+      "has_blueprint": true,
+      "path": "skills/funding-opportunity-digest"
+    },
+    {
+      "name": "grant-proposals",
+      "description": "Help plan, draft, and tighten grant proposals \u2014 aims, significance/innovation, approach, and reviewer-facing framing \u2014 to a specific funder's structure and criteria.",
+      "version": "1.0.0",
+      "category": "writing",
+      "tags": [
+        "grants",
+        "proposals",
+        "funding",
+        "writing"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/grant-proposals"
+    },
+    {
+      "name": "infographic",
+      "description": "Turn a markdown brief or a topic into a single-image infographic using the native image generation tool (Nano Banana Pro via OpenRouter), with strong in-image text.",
+      "version": "1.0.0",
+      "category": "presentations",
+      "tags": [
+        "infographic",
+        "image",
+        "visual",
+        "nano-banana",
+        "presentations"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/infographic"
+    },
+    {
+      "name": "literature-alerts",
+      "description": "Maintain living literature alerts \u2014 saved PubMed/preprint queries run on a schedule, deduplicated against what the operator has already seen, synthesized into a short what's-actually-new digest.",
+      "version": "1.0.0",
+      "category": "research",
+      "tags": [
+        "research",
+        "literature",
+        "pubmed",
+        "alerts",
+        "digest",
+        "cron"
+      ],
+      "curated": false,
+      "has_blueprint": true,
+      "path": "skills/literature-alerts"
+    },
+    {
+      "name": "literature-research",
+      "description": "Run rigorous literature/background research \u2014 find sources, read them, synthesize with citations, and track what was used. Open-weight-friendly, no fabrication.",
+      "version": "1.0.0",
+      "category": "research",
+      "tags": [
+        "research",
+        "literature",
+        "synthesis",
+        "citations"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/literature-research"
+    },
+    {
+      "name": "nih-format-linter",
+      "description": "Mechanically check a grant document against the funder's format and structure rules \u2014 required sections, page/word budgets, aims count, citation hygiene, attachment checklist \u2014 and report pass/fail per rule. Honest about what needs the final PDF.",
+      "version": "1.0.0",
+      "category": "grants",
+      "tags": [
+        "grants",
+        "nih",
+        "compliance",
+        "linter",
+        "checklist"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/nih-format-linter"
+    },
+    {
+      "name": "note-taker",
+      "description": "Capture, list, search, and tag timestamped markdown notes in ~/notes/. Use to jot something down, find a past note, or review recent notes/tags.",
+      "version": "1.0.0",
+      "category": "notes",
+      "tags": [
+        "notes",
+        "capture",
+        "tags",
+        "search"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/note-taker"
+    },
+    {
+      "name": "onboarding-interview",
+      "description": "Interview the operator one question at a time to build their work-profile portfolio (~/work-profile/*.md). Runs the core three files on first use; fills the rest on demand. Use on first contact, when a profile file is missing/thin, or when the operator says \"onboard me\" / \"let's do <file>\".",
+      "version": "2.0.0",
+      "category": "onboarding",
+      "tags": [
+        "onboarding",
+        "profile",
+        "context",
+        "portfolio",
+        "setup"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/onboarding-interview"
+    },
+    {
+      "name": "plain-language-summary",
+      "description": "Rewrite scientific or administrative content at a target reading level \u2014 funder-required lay summaries, participant-facing materials, community communications \u2014 with a readability score to prove it.",
+      "version": "1.0.0",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "plain-language",
+        "lay-summary",
+        "readability",
+        "community"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/plain-language-summary"
+    },
+    {
+      "name": "reference-management",
+      "description": "Manage citations and reference libraries \u2014 accurate metadata, consistent keys, correct style, and clean BibTeX/CSL \u2014 with zero fabricated or mismatched references.",
+      "version": "1.0.0",
+      "category": "reference",
+      "tags": [
+        "references",
+        "citations",
+        "bibtex",
+        "zotero",
+        "bibliography"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/reference-management"
+    },
+    {
+      "name": "reporting-checklists",
+      "description": "Audit a manuscript or protocol against the right reporting guideline \u2014 CONSORT, PRISMA, STROBE, ARRIVE, SPIRIT, CARE \u2014 item by item, with locations, gaps, and the filled checklist journals require at submission.",
+      "version": "1.0.0",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "reporting",
+        "consort",
+        "prisma",
+        "strobe",
+        "arrive",
+        "compliance"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/reporting-checklists"
+    },
+    {
+      "name": "research-investigator",
+      "description": "Compile an investigator dossier \u2014 publications (PubMed), grants (NIH Reporter), and a web-research profile \u2014 for a named researcher, with false-positive review. Also supports CSV batch mode and a lighter theranostics-relevance screen.",
+      "version": "1.0.0",
+      "category": "research",
+      "tags": [
+        "research",
+        "investigator",
+        "pubmed",
+        "nih-reporter",
+        "grants",
+        "dossier"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/research-investigator"
+    },
+    {
+      "name": "response-to-reviewers",
+      "description": "Build a point-by-point response to peer review \u2014 manuscript revisions or grant resubmission introductions \u2014 with the right tone, a change-tracking table, and no dodged points.",
+      "version": "1.0.0",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "peer-review",
+        "revision",
+        "resubmission",
+        "rebuttal"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/response-to-reviewers"
+    },
+    {
+      "name": "scientific-coding",
+      "description": "Write, debug, and refactor code for research and analysis \u2014 matching the operator's stack and repo conventions, with verification (run it, test it) before claiming it works.",
+      "version": "1.0.0",
+      "category": "coding",
+      "tags": [
+        "coding",
+        "python",
+        "refactor",
+        "debugging",
+        "tests"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/scientific-coding"
+    },
+    {
+      "name": "scientific-writing",
+      "description": "Draft and revise academic/technical prose and manuscripts (Markdown, LaTeX, Word) in the operator's voice, with correct structure, citations, and no invented results.",
+      "version": "1.0.0",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "manuscript",
+        "latex",
+        "markdown",
+        "editing"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/scientific-writing"
+    },
+    {
+      "name": "slides-and-figures",
+      "description": "Build clear talks and presentation-ready figures \u2014 a narrative arc, one idea per slide, and figures legible from the back row \u2014 in the operator's tooling.",
+      "version": "1.0.0",
+      "category": "presentations",
+      "tags": [
+        "presentations",
+        "slides",
+        "talks",
+        "figures"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/slides-and-figures"
+    },
+    {
+      "name": "specific-aims-redteam",
+      "description": "Run a mock study section on a Specific Aims page or full proposal \u2014 score it like NIH reviewers (Significance, Investigator, Innovation, Approach, Environment; Overall Impact), find the fatal flaws, and rank the fixes.",
+      "version": "1.0.0",
+      "category": "grants",
+      "tags": [
+        "grants",
+        "review",
+        "study-section",
+        "red-team",
+        "nih"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/specific-aims-redteam"
+    },
+    {
+      "name": "task-tracker",
+      "description": "Capture and manage the operator's tasks and hard deadlines \u2014 grant due dates, RPPRs, IRB/IACUC expirations, training renewals \u2014 in a single registry the deadline sentinel watches. Use when the operator mentions a deadline or asks what's due.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "tags": [
+        "productivity",
+        "tasks",
+        "deadlines",
+        "registry"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/task-tracker"
+    }
+  ]
+}
