@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "count": 26,
+  "count": 27,
   "entries": [
     {
       "name": "biosketch-and-other-support",
@@ -190,6 +190,22 @@
       "curated": false,
       "has_blueprint": false,
       "path": "skills/literature-research"
+    },
+    {
+      "name": "meeting-notes",
+      "description": "Turn a meeting transcript into structured notes \u2014 minutes, decisions, action items with owners and dates \u2014 and offer to file the action items into the task registry. Use when the operator has a transcript or says \"build notes from my meeting.\"",
+      "version": "1.0.0",
+      "category": "notes",
+      "tags": [
+        "notes",
+        "meetings",
+        "minutes",
+        "action-items",
+        "transcription"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "path": "skills/meeting-notes"
     },
     {
       "name": "nih-format-linter",
