@@ -1,7 +1,7 @@
 ---
 name: custom-tab
-description: Build or update the operator's "Custom" tab — a private web surface (HTML/CSS/JS) served from ~/custom/, with server-side save/load so pages can persist data. Use when asked to make a custom page, dashboard, mini-app, viewer, planner, or anything that should show up under the Custom tab.
-version: 1.1.0
+description: Build or update the operator's "Custom" tab — a private web surface (HTML/CSS/JS) served from ~/custom/, with a bridge for server-side save/load, multi-panel layouts, and panel-to-panel broadcast. Use when asked to make a custom page, dashboard, mini-app, viewer, planner, or anything that should show up under the Custom tab.
+version: 2.0.0
 metadata:
   hermes:
     category: coding
@@ -13,7 +13,8 @@ metadata:
 ## When to Use
 The operator wants a small web page, dashboard, report viewer, calculator, or interactive mini-app
 that appears in the web interface's **Custom** tab. This is the operator-owned UI surface — full
-HTML/CSS/JS, no image rebuild needed.
+HTML/CSS/JS, no image rebuild needed. Multi-view apps (a selector page plus several live panels)
+are supported — see "Multi-panel layouts" below.
 
 ## Where the content lives
 - All Custom-tab content lives in **`~/custom/`** (`/home/agent/workspace/custom/`), on the data
@@ -51,58 +52,129 @@ Instead: build only what works as **static files served by the tab**, and **tell
 endpoint the app is missing** so they can add it properly (authenticated, supervised, provider-neutral).
 Propose the fix; don't sidecar it.
 
-## Persisting data (server-side save/load)
-Static pages can't write to disk from the browser, so for tools that must **keep state across
-browser/device/reboot** (planners, dashboards, note editors, config), use the built-in persistence
-endpoints — files are stored under `~/custom/`, authenticated, sandboxed, and atomic. Do NOT fall
-back to localStorage for anything that matters (it's lost on a browser/device/origin change), and do
-NOT sidecar your own server (see the section above).
-
-The write is CSRF-protected like the rest of the app. Because the page is static (no Jinja token to
-embed), fetch the token first, then send it as `X-CSRF-Token`:
+## The sandbox and the bridge
+Your pages run in **sandboxed iframes with an opaque (null) origin**. They cannot read the app's
+session cookie or CSRF token and cannot call `/api/*` or `/custom/app/save` directly — a fetch from
+a null origin carries no credentials. Everything privileged goes through a narrow **postMessage
+bridge** exposed by the Custom-tab shell. Include this helper in every page (put it in a shared
+`~/custom/hermes.js` and `<script src="hermes.js">` it — adjust the relative path from subfolders,
+e.g. `src="../hermes.js"` from `views/`):
 
 ```js
-// relative URLs resolve from /custom/app/ (the index page). From a sub-page use /custom/app/save etc.
-
-// load (returns {ok, content} or {error}; 404 if absent)
-async function loadState() {
-  const r = await fetch('save?filename=planner-state.json');
-  if (r.ok) return JSON.parse((await r.json()).content);
-  return null;                       // first run / not saved yet
-}
-
-// save (POST needs the CSRF token)
-async function saveState(state) {
-  const { csrf_token } = await (await fetch('csrf')).json();
-  await fetch('save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf_token },
-    body: JSON.stringify({ filename: 'planner-state.json', content: JSON.stringify(state) })
-  });
-}
+const hermes = {
+  _n: 0, _wait: {}, _onb: null,
+  _call(op, payload, timeoutMs) {
+    return new Promise((res, rej) => {
+      const id = ++this._n;
+      const t = setTimeout(() => { delete this._wait[id]; rej(new Error('bridge timeout')); }, timeoutMs || 3000);
+      this._wait[id] = { res: v => { clearTimeout(t); res(v); }, rej: e => { clearTimeout(t); rej(e); } };
+      parent.postMessage({ type: 'hermes-bridge', id, op, payload }, '*');
+    });
+  },
+  save(filename, content) { return this._call('save', { filename, content }); },
+  async load(filename) {            // retry: on a cold load our first message can beat the bridge
+    for (let i = 0; i < 5; i++) {
+      try { return await this._call('load', { filename }, 2000); }
+      catch (e) { await new Promise(r => setTimeout(r, 300)); }
+    }
+    return { ok: false, error: 'bridge unavailable' };
+  },
+  setLayout(panels) { return this._call('setLayout', { panels }); },  // main page only
+  broadcast(data)   { return this._call('broadcast', data); },        // notify sibling panels
+  onBroadcast(fn)   { this._onb = fn; },                              // fn(data, from)
+};
+addEventListener('message', (e) => {
+  if (e.source !== parent) return;
+  const m = e.data; if (!m) return;
+  if (m.type === 'hermes-broadcast') { if (hermes._onb) hermes._onb(m.data, m.from); return; }
+  if (m.type !== 'hermes-bridge-reply') return;
+  const w = hermes._wait[m.id]; if (!w) return; delete hermes._wait[m.id];
+  m.ok ? w.res(m.result) : w.rej(new Error(m.error));
+});
 ```
+
+Do **not** try the old approach of fetching `/custom/app/csrf` and calling `save` directly — that
+route no longer exists and the sandboxed page has no credentials. The bridge is the only path.
+
+## Persisting data (server-side save/load)
+Static pages can't write to disk from the browser, so for tools that must **keep state across
+browser/device/reboot** (planners, dashboards, note editors, config), use `hermes.save`/`hermes.load`.
+Files are stored under `~/custom/`, authenticated, sandboxed, and written atomically. Do NOT fall
+back to localStorage for anything that matters (sandboxed null-origin pages may not even have it,
+and it's lost on a browser/device change), and do NOT sidecar your own server (see above).
+
+```js
+await hermes.save('data/planner.json', JSON.stringify(state));
+const r = await hermes.load('data/planner.json');   // {ok, content} or rejects / {error}
+const state = r.ok ? JSON.parse(r.content) : null;  // null → first run
+```
+
 - `filename` may include subdirs (`data/config.json`, `notes/project.md`); parent dirs are created.
 - Confined to `~/custom/` — `../` escapes are rejected. Any text format is fine (.json/.md/.csv/.yaml).
 - These files also appear in the Files tab and can be read/edited by the agent, so saved state is
   inspectable and portable.
+- Writes are **last-write-wins** (no merging). With multiple panels, follow *one writer per file*,
+  or read-modify-write immediately before saving.
+
+## Multi-panel layouts (setLayout + broadcast)
+The main page (`index.html`) can declare a stack of extra **panel iframes** rendered below it, each
+an independently sandboxed page served from `~/custom/`. This is how to build a multi-view app: the
+main page is the controller/selector; each panel is its own small HTML file.
+
+```js
+// From index.html only (panels get 'setLayout is main-page only' if they try):
+await hermes.setLayout([
+  { src: 'views/budget/chart.html', height: '400px', title: 'Spend by month' },
+  { src: 'views/budget/table.html', height: '55vh',  title: 'Line items' },
+]);
+await hermes.setLayout([]);   // clear all panels (e.g. when switching views)
+```
+
+- `src` is a **relative path under `~/custom/`** (no leading `/`, no `..`, no URLs). Max 12 panels.
+- `height` is optional (`px`/`vh`/`%`, default `400px`); each panel has a native resize handle.
+- Calling `setLayout` again **replaces** the whole stack — re-declare the full layout per view.
+- Every panel gets the same bridge (`hermes.save/load/broadcast`); copy/include the same helper.
+
+**Shared data, different views** (the recommended pattern): keep one canonical data file, and let
+each panel be a different lens over it. After any panel saves, it broadcasts; the others re-load:
+
+```js
+// In the panel that edits and saves:
+await hermes.save('data/budget.json', JSON.stringify(model));
+await hermes.broadcast({ type: 'data-changed', file: 'data/budget.json' });
+
+// In every panel that displays the data:
+hermes.onBroadcast(async (data) => {
+  if (data && data.type === 'data-changed' && data.file === 'data/budget.json') await refresh();
+});
+```
+
+`broadcast` delivers to all sibling frames (main + panels) except the sender; `from` is `'main'`
+or the panel's `src`. It is fire-and-forget — don't build request/response protocols on it; for
+state, the file is the source of truth.
 
 ## Procedure
 1. `mkdir -p ~/custom` if it doesn't exist.
-2. Write `~/custom/index.html` (a complete HTML document). Keep it self-contained or split into
-   sibling files referenced relatively.
-3. For data the page needs, write it alongside (e.g. `~/custom/data.json`) and `fetch('data.json')`,
-   or inline small data directly into the HTML.
-4. Save. There's no build step and no restart — reload the Custom tab to see it.
+2. Write `~/custom/hermes.js` (the bridge helper above) and `~/custom/index.html` (a complete HTML
+   document). Keep it self-contained or split into sibling files referenced relatively.
+3. For a multi-view app: put each panel in its own file (e.g. `~/custom/views/<view>/<panel>.html`),
+   have `index.html` render the view selector and call `hermes.setLayout(...)` on selection.
+4. For data the app needs, save it under `~/custom/data/` via `hermes.save` (or write it directly
+   as the agent) and load it with `hermes.load`.
+5. Save. There's no build step and no restart — reload the Custom tab to see it.
 
 ## Pitfalls
-- **Absolute paths break.** Use relative URLs for assets — the page is served under a `/custom/app/`
-  prefix, so `/style.css` won't resolve but `style.css` will.
+- **Absolute paths break.** Use relative URLs for assets — pages are served under a `/custom/app/`
+  prefix, so `/style.css` won't resolve but `style.css` will. From `views/x/panel.html`, the shared
+  helper is `../../hermes.js`.
 - **Don't write outside `~/custom/`** for tab content, and don't try to wire it up by editing the
   Flask app — there's nothing to wire; the folder is the contract.
+- **Panels can't call `setLayout`** — only `index.html` can. Route layout changes through the main
+  page (e.g. a panel broadcasts `{type:'switch-view', view:'budget'}` and main reacts).
 - Large/binary assets belong in `~/custom/` too; keep the page fast.
 
 ## Verification
 - Confirm `~/custom/index.html` exists and that any referenced assets resolve (relative paths,
-  correct filenames).
+  correct filenames — remember panels in subfolders need adjusted relative paths).
 - Tell the operator to open the **Custom** tab (or reload it) to view the result; describe what they
-  should see.
+  should see, including which panels appear for each view.

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "count": 27,
+  "count": 36,
   "entries": [
     {
       "name": "biosketch-and-other-support",
@@ -16,6 +16,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/biosketch-and-other-support"
     },
     {
@@ -32,12 +33,13 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/calendar"
     },
     {
       "name": "custom-tab",
-      "description": "Build or update the operator's \"Custom\" tab \u2014 a private web surface (HTML/CSS/JS) served from ~/custom/, with server-side save/load so pages can persist data. Use when asked to make a custom page, dashboard, mini-app, viewer, planner, or anything that should show up under the Custom tab.",
-      "version": "1.1.0",
+      "description": "Build or update the operator's \"Custom\" tab \u2014 a private web surface (HTML/CSS/JS) served from ~/custom/, with a bridge for server-side save/load, multi-panel layouts, and panel-to-panel broadcast. Use when asked to make a custom page, dashboard, mini-app, viewer, planner, or anything that should show up under the Custom tab.",
+      "version": "2.0.0",
       "category": "coding",
       "tags": [
         "web",
@@ -48,6 +50,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/custom-tab"
     },
     {
@@ -64,6 +67,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/data-processing"
     },
     {
@@ -79,6 +83,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/data-visualization"
     },
     {
@@ -95,7 +100,25 @@
       ],
       "curated": false,
       "has_blueprint": true,
+      "persona": "",
       "path": "skills/deadline-sentinel"
+    },
+    {
+      "name": "delegate-to-specialist",
+      "description": "Delegate a task to a specialist agent profile (researcher, writer, coder, context-builder, reviewer, compliance) via a headless one-shot run with a written brief. Use when a substantial task matches a specialist, or when the operator asks for a review, compliance screen, or research sweep.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "tags": [
+        "delegation",
+        "team",
+        "orchestration",
+        "specialists",
+        "personas"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/delegate-to-specialist"
     },
     {
       "name": "email-and-scheduling",
@@ -110,7 +133,29 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/email-and-scheduling"
+    },
+    {
+      "name": "firecrawl-research",
+      "description": "Research a life-sciences topic or author against Firecrawl's Research Index (41M+ paper abstracts from PubMed, bioRxiv, medRxiv, and arXiv, refreshed daily) \u2014 ranked semantic search, full-text passage reading, and citation-graph exploration. Uses the Firecrawl API (FIRECRAWL_API_KEY from Settings \u2192 Integrations; works keyless at lower rate limits).",
+      "version": "1.0.0",
+      "category": "research",
+      "tags": [
+        "research",
+        "firecrawl",
+        "literature",
+        "papers",
+        "pubmed",
+        "biorxiv",
+        "medrxiv",
+        "arxiv",
+        "life-sciences"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/firecrawl-research"
     },
     {
       "name": "funding-opportunity-digest",
@@ -126,6 +171,7 @@
       ],
       "curated": false,
       "has_blueprint": true,
+      "persona": "",
       "path": "skills/funding-opportunity-digest"
     },
     {
@@ -141,6 +187,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/grant-proposals"
     },
     {
@@ -157,6 +204,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/infographic"
     },
     {
@@ -174,6 +222,7 @@
       ],
       "curated": false,
       "has_blueprint": true,
+      "persona": "",
       "path": "skills/literature-alerts"
     },
     {
@@ -189,6 +238,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/literature-research"
     },
     {
@@ -205,6 +255,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/meeting-notes"
     },
     {
@@ -221,6 +272,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/nih-format-linter"
     },
     {
@@ -236,12 +288,13 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/note-taker"
     },
     {
       "name": "onboarding-interview",
       "description": "Interview the operator one question at a time to build their work-profile portfolio (~/work-profile/*.md). Runs the core three files on first use; fills the rest on demand. Use on first contact, when a profile file is missing/thin, or when the operator says \"onboard me\" / \"let's do <file>\".",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "category": "onboarding",
       "tags": [
         "onboarding",
@@ -252,7 +305,25 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/onboarding-interview"
+    },
+    {
+      "name": "persona-clinical-research-coordinator",
+      "description": "Persona pack \u2014 Clinical Research Coordinator. Installing it adds a \"Clinical Research Coordinator\" user persona to the Profile tab picker (writer/context-builder/reviewer/compliance team, IRB + citation rubrics, CRC-tuned work-profile prefills). It composes the baked specialist archetypes; it adds no new agents and no new tools.",
+      "version": "1.0.0",
+      "category": "personas",
+      "tags": [
+        "persona",
+        "clinical-research",
+        "coordinator",
+        "irb",
+        "compliance"
+      ],
+      "curated": true,
+      "has_blueprint": false,
+      "persona": "clinical-research-coordinator",
+      "path": "skills/persona-clinical-research-coordinator"
     },
     {
       "name": "plain-language-summary",
@@ -268,6 +339,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/plain-language-summary"
     },
     {
@@ -284,6 +356,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/reference-management"
     },
     {
@@ -301,6 +374,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/reference-manager-bridge"
     },
     {
@@ -319,6 +393,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/reporting-checklists"
     },
     {
@@ -336,6 +411,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/research-investigator"
     },
     {
@@ -352,7 +428,93 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/response-to-reviewers"
+    },
+    {
+      "name": "review-citations",
+      "description": "Rubric pack for the reviewer specialist \u2014 verify that a document's citations exist, are correctly attributed, and actually support the claims made on them. Use when a brief names the review-citations rubric.",
+      "version": "1.0.0",
+      "category": "review",
+      "tags": [
+        "review",
+        "citations",
+        "verification",
+        "references",
+        "rubric"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/review-citations"
+    },
+    {
+      "name": "review-grant",
+      "description": "Rubric pack for the reviewer specialist \u2014 compliance and study-section-style critique of a grant application against its RFA/FOA. Use when a brief names the review-grant rubric.",
+      "version": "1.0.0",
+      "category": "review",
+      "tags": [
+        "review",
+        "grants",
+        "rfa",
+        "compliance",
+        "rubric"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/review-grant"
+    },
+    {
+      "name": "review-irb",
+      "description": "Rubric pack for the reviewer specialist \u2014 checklist-driven review of an IRB protocol packet (protocol/SmartForm, consent forms, recruitment materials) against the federal approval criteria. Use when a brief names the review-irb rubric.",
+      "version": "1.0.0",
+      "category": "review",
+      "tags": [
+        "review",
+        "irb",
+        "regulatory",
+        "human-subjects",
+        "rubric"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/review-irb"
+    },
+    {
+      "name": "review-manuscript",
+      "description": "Rubric pack for the reviewer specialist \u2014 peer-review-style critique of a manuscript, abstract, or thesis chapter. Supports feedback mode (findings and questions only) for trainee work. Use when a brief names the review-manuscript rubric.",
+      "version": "1.0.0",
+      "category": "review",
+      "tags": [
+        "review",
+        "manuscript",
+        "peer-review",
+        "writing",
+        "rubric"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/review-manuscript"
+    },
+    {
+      "name": "review-security",
+      "description": "Rubric pack for the reviewer specialist \u2014 security and safety review of code, configuration, scripts, or a skill before it is adopted. Use when a brief names the review-security rubric.",
+      "version": "1.0.0",
+      "category": "review",
+      "tags": [
+        "review",
+        "security",
+        "code",
+        "configuration",
+        "rubric"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/review-security"
     },
     {
       "name": "scientific-coding",
@@ -368,6 +530,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/scientific-coding"
     },
     {
@@ -384,7 +547,25 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/scientific-writing"
+    },
+    {
+      "name": "site-access",
+      "description": "What to do when a website or API can't be reached because the institutional egress allowlist blocked it (DNS NXDOMAIN / \"could not resolve host\" / connection refused to a new site). Generates the approval link the user clicks to allow the site once or always.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "tags": [
+        "network",
+        "egress",
+        "allowlist",
+        "approval",
+        "blocked"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/site-access"
     },
     {
       "name": "slides-and-figures",
@@ -399,6 +580,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/slides-and-figures"
     },
     {
@@ -415,6 +597,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/specific-aims-redteam"
     },
     {
@@ -430,6 +613,7 @@
       ],
       "curated": false,
       "has_blueprint": false,
+      "persona": "",
       "path": "skills/task-tracker"
     }
   ]

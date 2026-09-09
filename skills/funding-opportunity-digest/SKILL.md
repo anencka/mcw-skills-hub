@@ -8,8 +8,8 @@ metadata:
     category: grants
     related_skills: [grant-proposals, literature-alerts, research-investigator]
     blueprint:
-      schedule: "0 12 * * 1"
-      prompt: "Run the funding-opportunity-digest skill: refresh ~/work/funding-watch.md queries against Grants.gov, NIH RePORTER, and NSF; build the ranked what's-new digest; email it via himalaya; update the seen list."
+      schedule: "0 7 * * 1"
+      prompt: "Run the funding-opportunity-digest skill: refresh ~/work/funding-watch.md queries against Grants.gov, NIH RePORTER, and NSF; build the ranked what's-new digest; email it via himalaya using the account that matches the recipient's tier (external addresses REQUIRE `-a external`; the internal mailbox has no external relay); update the seen list."
 ---
 # Funding Opportunity Digest
 
@@ -47,6 +47,25 @@ research topics, methods, and career stage that drive matching. If either is mos
 4. **Deliver the digest**: a short ranked table (opportunity — funder/mechanism — deadline —
    one-line why-it-fits — link), then a "calibration" note of 2-3 recently funded awards in
    the same space from RePORTER/NSF. Plain text that reads well in email.
+   **Choose the account by recipient tier** — the internal mailbox cannot reach the outside
+   world (its plane has no external relay by design), so a digest addressed to an
+   institutional/public address MUST go out on the external tier:
+   ```bash
+   # external recipient (e.g. name@mcw.edu, gmail, icloud):
+   printf 'To: <you>@mcw.edu\nSubject: ...\n\n<digest>' \
+     | himalaya template send -a external
+   # internal recipient (<you>@agents.<domain>) — default account, no -a needed:
+   printf 'To: <you>@agents.<domain>\nSubject: ...\n\n<digest>' \
+     | himalaya template send
+   ```
+   **Never write a `From:` header.** The account selected with `-a` IS the sending identity
+   and supplies the address itself; a guessed From (e.g. `agent-hermes@…` when the mailbox is
+   `agent-<user>@…`) is rewritten by the send shim and, if it ever reached delivery, refused
+   by the broker (E6). You cannot know the address — don't try.
+   Either way the send is queued as an outbox draft for operator approval (external is
+   approval-only by design and can never be autonomous) — that is expected, not an error.
+   Do NOT "fix" a refusal by widening a credential: a `550 5.7.1 not authorized` means the
+   agent credential is read-only on purpose and the courier broker owns delivery.
 5. **Update the watch file** with what was surfaced so the next run only reports new items.
 6. If the operator wants this recurring, set it up as a **cron job** (the scheduling tool /
    `hermes cron`) that runs this skill and sends the digest via himalaya email — never

@@ -1,7 +1,7 @@
 ---
 name: onboarding-interview
 description: Interview the operator one question at a time to build their work-profile portfolio (~/work-profile/*.md). Runs the core three files on first use; fills the rest on demand. Use on first contact, when a profile file is missing/thin, or when the operator says "onboard me" / "let's do <file>".
-version: 2.0.0
+version: 2.1.0
 metadata:
   hermes:
     tags: [onboarding, profile, context, portfolio, setup]
@@ -22,6 +22,19 @@ read-first file. The container seeds every file pre-structured with `*(to captur
 
 **Before interviewing, READ the relevant file(s) first** (and anything already captured in other
 files). Only work on what's blank or thin — never re-ask what the operator already wrote.
+
+## Persona-prefilled files
+When a persona was applied (Profile tab, or fleet provisioning), some files start from
+**role-tuned templates** marked with an HTML comment beginning `<!-- Persona-prefilled`. Treat
+these as *better prompts, not answers*: the headings and `*(to capture — …)*` hints are tailored
+to the operator's role, but **nothing in them came from the operator**. In the interview:
+- Use the tailored hints to ask sharper questions — they tell you what this role usually involves.
+- Fill in the operator's actual answers exactly as with any other file (edit the prefill in place).
+- **Remove the `<!-- Persona-prefilled … -->` marker comment** once you've captured the operator's
+  answers for that file — the Profile tab uses it to show a "persona prefill" badge, which should
+  disappear when the file holds real content.
+- Never present prefill text back as if the operator said it, and never let a prefill hint survive
+  as an unconfirmed "fact" in the finished file.
 
 ## Scope: tiered, not all-at-once
 - **Default onboarding = the core three**, in order: `identity.md` → `role-and-responsibilities.md`
@@ -67,7 +80,8 @@ the domain skills relevant to their work, and note the remaining profile files f
 ## Pitfalls
 - **Don't pre-fill or guess.** Record only what the operator actually told you; everything else
   stays `*(to capture)*`. A blank field is the correct state — guessed values are worse than blanks
-  because they get silently trusted later.
+  because they get silently trusted later. (Persona prefills are the one sanctioned exception, and
+  they carry a marker precisely because they are prompts, not answers — see above.)
 - **Don't interrogate.** Accept partial answers and move on; the portfolio is living.
 - **Don't re-ask** what's already in the files.
 - **Never record PHI, credentials, or anything flagged sensitive.** Confirm the no-PHI boundary;

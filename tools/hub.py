@@ -119,6 +119,21 @@ def cmd_catalog(hub):
             continue
         hermes = ((fm.get('metadata') or {}).get('hermes')
                   if isinstance(fm.get('metadata'), dict) else None) or {}
+        # Persona packs (metadata.hermes.persona: <slug>) must actually ship the manifest
+        # the webapp reads after install — catch a broken pack at catalog time, not on a
+        # user's Profile tab.
+        persona = str(hermes.get('persona') or '')
+        if persona:
+            if not re.match(r'^[a-z0-9][a-z0-9_-]{0,63}$', persona):
+                raise ValueError(f'{where}: invalid metadata.hermes.persona {persona!r}')
+            ppath = os.path.join(skill_dir, 'persona.yaml')
+            try:
+                pm = yaml.safe_load(open(ppath, encoding='utf-8')) or {}
+            except (OSError, yaml.YAMLError) as e:
+                raise ValueError(f'{where}: persona pack without readable persona.yaml ({e})')
+            if pm.get('slug') != persona:
+                raise ValueError(f'{where}: persona.yaml slug {pm.get("slug")!r} != '
+                                 f'metadata.hermes.persona {persona!r}')
         entries.append({
             'name': str(fm['name']),
             'description': str(fm['description']),
@@ -127,6 +142,7 @@ def cmd_catalog(hub):
             'tags': [str(t) for t in (hermes.get('tags') or []) if str(t)][:12],
             'curated': bool(hermes.get('curated', False)),
             'has_blueprint': isinstance(hermes.get('blueprint'), dict),
+            'persona': persona,
             'path': f'skills/{dir_name}',
         })
     catalog = {'schema': 1, 'count': len(entries), 'entries': entries}

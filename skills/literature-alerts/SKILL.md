@@ -8,7 +8,7 @@ metadata:
     category: research
     related_skills: [literature-research, reference-management, funding-opportunity-digest]
     blueprint:
-      schedule: "0 12 * * 1"
+      schedule: "0 7 * * 1"
       prompt: "Run the literature-alerts skill: run every query in ~/work/lit-alerts/queries.md against PubMed (and preprints where configured), dedupe against seen.txt, email the what's-new digest via himalaya, then update seen.txt."
 ---
 # Living Literature Alerts

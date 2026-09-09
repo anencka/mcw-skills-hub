@@ -8,7 +8,7 @@ metadata:
     category: productivity
     related_skills: [task-tracker, email-and-scheduling, funding-opportunity-digest]
     blueprint:
-      schedule: "0 11 * * 1-5"
+      schedule: "0 6 * * 1-5"
       prompt: "Run the deadline-sentinel skill: read the task registry via the task-tracker CLI's `due` command, and if anything is overdue or inside its warning window, email the operator a short prioritized digest via himalaya. If nothing needs attention, send nothing."
 ---
 # Deadline Sentinel
