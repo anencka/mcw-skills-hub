@@ -19,6 +19,7 @@ import json
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -140,11 +141,20 @@ def build_pubmed_query(author_variants: list, institution_variants: list,
     return query
 
 
-def search_pubmed(query: str, max_results: int = 1000) -> list:
-    """
-    Search PubMed and return list of PMIDs.
+class SourceError(RuntimeError):
+    """A PubMed request or response that cannot be trusted as a (possibly empty) result."""
 
-    Uses E-utilities esearch endpoint.
+
+EXIT_OK, EXIT_PARTIAL, EXIT_USAGE = 0, 1, 2
+
+
+def search_pubmed(query: str, max_results: int = 1000) -> tuple:
+    """
+    Search PubMed and return (pmids, total_count).
+
+    Uses E-utilities esearch endpoint. Fails closed (DESIGN_PRINCIPLES P8): transport
+    errors, an E-utilities ERROR field, or a missing idlist RAISE SourceError instead of
+    returning an empty list — an outage must never read as "no publications".
     """
     base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
@@ -160,26 +170,36 @@ def search_pubmed(query: str, max_results: int = 1000) -> list:
     try:
         with urllib.request.urlopen(url, timeout=30) as response:
             data = json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+        raise SourceError(f"PubMed esearch failed: {type(e).__name__}: {e}") from e
 
-        result = data.get("esearchresult", {})
-        pmids = result.get("idlist", [])
-        count = int(result.get("count", 0))
+    result = data.get("esearchresult") if isinstance(data, dict) else None
+    if not isinstance(result, dict):
+        raise SourceError("PubMed esearch response is missing `esearchresult`")
+    if result.get("ERROR"):
+        raise SourceError(f"PubMed esearch error: {result['ERROR']}")
+    pmids = result.get("idlist")
+    if not isinstance(pmids, list):
+        raise SourceError("PubMed esearch response has no `idlist` list")
+    try:
+        count = int(result.get("count", len(pmids)))
+    except (TypeError, ValueError):
+        count = len(pmids)
 
-        print(f"Found {count} results, retrieved {len(pmids)} PMIDs", file=sys.stderr)
-
-        return pmids
-
-    except Exception as e:
-        print(f"Error searching PubMed: {e}", file=sys.stderr)
-        return []
+    print(f"Found {count} results, retrieved {len(pmids)} PMIDs", file=sys.stderr)
+    return pmids, count
 
 
-def fetch_pubmed_details(pmids: list, batch_size: int = 100) -> list:
+def fetch_pubmed_details(pmids: list, batch_size: int = 100, errors: Optional[list] = None) -> list:
     """
     Fetch detailed records for PMIDs.
 
-    Uses E-utilities efetch endpoint with XML format.
+    Uses E-utilities efetch endpoint with XML format. A failed batch or an unparseable
+    article is appended to `errors` (with the affected PMIDs) instead of being dropped
+    silently, so the caller can mark the run partial.
     """
+    if errors is None:
+        errors = []
     if not pmids:
         return []
 
@@ -204,34 +224,38 @@ def fetch_pubmed_details(pmids: list, batch_size: int = 100) -> list:
             with urllib.request.urlopen(url, timeout=60) as response:
                 xml_data = response.read().decode()
 
-            records = parse_pubmed_xml(xml_data)
+            records = parse_pubmed_xml(xml_data, errors=errors)
             all_records.extend(records)
 
-            # Be nice to NCBI servers
-            if i + batch_size < len(pmids):
-                time.sleep(0.5)
-
-        except Exception as e:
+        except (urllib.error.URLError, TimeoutError, OSError, ET.ParseError, SourceError) as e:
             print(f"Error fetching batch: {e}", file=sys.stderr)
+            errors.append({"step": f"efetch batch {i + 1}-{i + len(batch)}",
+                           "message": f"{type(e).__name__}: {e}", "pmids": list(batch)})
+
+        # Be nice to NCBI servers
+        if i + batch_size < len(pmids):
+            time.sleep(0.5)
 
     return all_records
 
 
-def parse_pubmed_xml(xml_data: str) -> list:
-    """Parse PubMed XML response into structured records."""
+def parse_pubmed_xml(xml_data: str, errors: Optional[list] = None) -> list:
+    """Parse PubMed XML response into structured records.
+
+    Malformed XML raises ET.ParseError (the whole batch is then recorded as failed by
+    the caller); an article that cannot be parsed is recorded in `errors`, not dropped."""
+    if errors is None:
+        errors = []
     records = []
-
-    try:
-        root = ET.fromstring(xml_data)
-
-        for article in root.findall(".//PubmedArticle"):
-            record = parse_article(article)
-            if record:
-                records.append(record)
-
-    except ET.ParseError as e:
-        print(f"XML parsing error: {e}", file=sys.stderr)
-
+    root = ET.fromstring(xml_data)
+    for article in root.findall(".//PubmedArticle"):
+        record = parse_article(article)
+        if record:
+            records.append(record)
+        else:
+            pmid = article.findtext(".//PMID") or "(unknown)"
+            errors.append({"step": "parse article", "message": "article could not be parsed",
+                           "pmids": [pmid]})
     return records
 
 
@@ -500,45 +524,55 @@ Examples:
 
     # Search PubMed
     print(f"Searching PubMed for {first_name} {last_name}...", file=sys.stderr)
-    pmids = search_pubmed(query, args.max_results)
+    errors = []
+    records = []
+    available = None
+    try:
+        pmids, available = search_pubmed(query, args.max_results)
+    except SourceError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        errors.append({"step": "esearch", "message": str(e)})
+        pmids = []
 
-    if not pmids:
-        print("No results found", file=sys.stderr)
-        result = {
-            "query": {
-                "author": f"{first_name} {middle_name} {last_name}".strip(),
-                "author_variants": author_variants,
-                "institution": institution,
-                "institution_variants": institution_variants,
-                "start_date": start_date,
-                "end_date": end_date,
-                "pubmed_query": query
-            },
-            "total_results": 0,
-            "publications": []
-        }
-    else:
-        # Fetch details
+    if pmids:
         print(f"Fetching details for {len(pmids)} publications...", file=sys.stderr)
-        records = fetch_pubmed_details(pmids)
-
-        # Add citations to records
+        records = fetch_pubmed_details(pmids, errors=errors)
         for record in records:
             record["citation"] = format_citation(record)
+    elif not errors:
+        print("No results found", file=sys.stderr)
 
-        result = {
-            "query": {
-                "author": f"{first_name} {middle_name} {last_name}".strip(),
-                "author_variants": author_variants,
-                "institution": institution,
-                "institution_variants": institution_variants,
-                "start_date": start_date,
-                "end_date": end_date,
-                "pubmed_query": query
-            },
-            "total_results": len(records),
-            "publications": records
-        }
+    if available is not None and available > len(pmids):
+        errors.append({"step": "esearch",
+                       "message": f"{available} matches but only {len(pmids)} retrieved "
+                                  f"(--max-results={args.max_results}) — results are incomplete"})
+
+    if errors and not records:
+        status = "failed"
+    elif errors:
+        status = "partial"
+    else:
+        status = "ok"
+
+    result = {
+        # `status` is authoritative: "failed" means PubMed could not be searched — an empty
+        # `publications` list is NOT evidence of no publications. "partial" means some
+        # matches are missing (see `errors`, which lists affected PMIDs). Only "ok" is complete.
+        "status": status,
+        "errors": errors,
+        "matches_available": available,
+        "query": {
+            "author": f"{first_name} {middle_name} {last_name}".strip(),
+            "author_variants": author_variants,
+            "institution": institution,
+            "institution_variants": institution_variants,
+            "start_date": start_date,
+            "end_date": end_date,
+            "pubmed_query": query
+        },
+        "total_results": len(records),
+        "publications": records
+    }
 
     # Output
     output_json = json.dumps(result, indent=2, ensure_ascii=False)
@@ -550,7 +584,11 @@ Examples:
         print(f"Results written to {args.output}", file=sys.stderr)
     else:
         print(output_json)
+    if status != "ok":
+        print(f"PubMed status: {status.upper()} — see `errors` in the output", file=sys.stderr)
+        return EXIT_PARTIAL
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

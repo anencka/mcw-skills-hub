@@ -1,7 +1,7 @@
 ---
 name: data-processing
 description: Build reproducible data pipelines — load, clean, transform, and validate datasets — with sanity checks at every step and no silent data loss.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [data, pipeline, cleaning, pandas, reproducibility]
@@ -20,7 +20,10 @@ either is still mostly `*(to capture)*`, offer **once** to fill it — a few que
 `onboarding-interview`, e.g. "let's do tools-and-systems") or the operator edits it in the Files
 tab — then proceed; if they skip, note that in memory and don't re-ask. **Read these fresh each
 use; never cache their contents — the file is the source of truth.**
-- **Sensitivity (hard rule):** confirm no PHI/identifiers in what you'll touch; if present, stop and flag.
+- **Sensitivity (hard rule):** check what you'll touch for PHI, identifiers and other protected
+  information. Your policy (SOUL, rule 2) says whether this deployment permits it: where it does not,
+  stop and flag; where it does, go ahead and keep the data on this deployment — no web tools or
+  outside services on it unless the operator asks for that specific disclosure.
 
 ## Procedure
 1. **Inspect first.** Look at the raw data — shape, dtypes, ranges, missingness, a few real rows —
@@ -39,7 +42,7 @@ use; never cache their contents — the file is the source of truth.**
 - Silent row drops / type coercions that lose data — always log deltas.
 - Mutating raw data in place; non-reproducible one-off steps.
 - Trusting a transform without validating the output.
-- Processing identifiable/PHI data — out of scope; stop and flag.
+- Processing identifiable/PHI data on a deployment whose policy does not permit it — stop and flag.
 
 ## Verification
 Each step's row/column deltas are logged and reconcile; validation checks pass; the pipeline

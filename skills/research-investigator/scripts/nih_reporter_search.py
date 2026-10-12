@@ -17,6 +17,7 @@ import argparse
 import json
 import re
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -185,22 +186,29 @@ def search_nih_reporter(pi_names: list, institutions: list,
         "Accept": "application/json"
     }
 
+    # Fail closed (DESIGN_PRINCIPLES P8): any transport, HTTP, or envelope error RAISES.
+    # Returning an empty result here used to turn an outage into "this investigator has no
+    # grants" with exit 0.
+    request_data = json.dumps(request_body).encode("utf-8")
+    req = urllib.request.Request(url, data=request_data, headers=headers, method="POST")
     try:
-        request_data = json.dumps(request_body).encode("utf-8")
-        req = urllib.request.Request(url, data=request_data, headers=headers, method="POST")
-
         with urllib.request.urlopen(req, timeout=60) as response:
             result = json.loads(response.read().decode())
-
-        return result
-
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode() if e.fp else ""
-        print(f"HTTP Error {e.code}: {error_body}", file=sys.stderr)
-        return {"meta": {"total": 0}, "results": []}
-    except Exception as e:
-        print(f"Error searching NIH Reporter: {e}", file=sys.stderr)
-        return {"meta": {"total": 0}, "results": []}
+        error_body = e.read().decode(errors="replace")[:300] if e.fp else ""
+        raise SourceError(f"NIH RePORTER HTTP {e.code}: {error_body}".strip()) from e
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+        raise SourceError(f"NIH RePORTER request failed: {type(e).__name__}: {e}") from e
+    if not isinstance(result, dict) or not isinstance(result.get("results"), list):
+        raise SourceError("NIH RePORTER response is missing its `results` list")
+    return result
+
+
+class SourceError(RuntimeError):
+    """An NIH RePORTER request or response that cannot be trusted as a (possibly empty) result."""
+
+
+EXIT_OK, EXIT_PARTIAL, EXIT_USAGE = 0, 1, 2
 
 
 def parse_grant_record(record: dict) -> dict:
@@ -486,20 +494,27 @@ Examples:
     offset = 0
     limit = min(args.max_results, 500)
     total = None
+    errors = []
 
     while True:
-        response = search_nih_reporter(pi_names, institution_variants, start_year, end_year, limit=limit, offset=offset)
+        try:
+            response = search_nih_reporter(pi_names, institution_variants, start_year, end_year,
+                                           limit=limit, offset=offset)
+        except SourceError as e:
+            errors.append({"step": f"search offset={offset}", "message": str(e)})
+            print(f"ERROR: {e}", file=sys.stderr)
+            break
 
         if args.raw:
             print(json.dumps(response, indent=2))
-            return
+            return EXIT_OK
 
-        meta = response.get("meta", {})
+        meta = response.get("meta") or {}
         if total is None:
-            total = meta.get("total", 0)
+            total = meta.get("total", 0) or 0
             print(f"Found {total} grant records", file=sys.stderr)
 
-        results = response.get("results", [])
+        results = response["results"]
         if not results:
             break
 
@@ -510,6 +525,18 @@ Examples:
             break
 
         print(f"  Fetched {offset}/{total}...", file=sys.stderr)
+
+    truncated = bool(total) and len(all_results) < total and not errors
+    if truncated:
+        errors.append({"step": "pagination",
+                       "message": f"stopped at --max-results={args.max_results}; "
+                                  f"{total} records available — results are incomplete"})
+    if errors and not all_results:
+        status = "failed"
+    elif errors:
+        status = "partial"
+    else:
+        status = "ok"
 
     # Parse records
     print(f"Processing {len(all_results)} grant records...", file=sys.stderr)
@@ -528,6 +555,12 @@ Examples:
 
     # Build output
     result = {
+        # `status` is authoritative: "failed" means NIH RePORTER could not be searched — the
+        # empty `grants` list is NOT evidence of no funding. "partial" means some records are
+        # missing. Only "ok" supports a complete grant history.
+        "status": status,
+        "errors": errors,
+        "records_available": total,
         "query": {
             "investigator": f"{first_name} {middle_name} {last_name}".strip(),
             "pi_name_variants": pi_names,
@@ -555,7 +588,11 @@ Examples:
         print(f"Results written to {args.output}", file=sys.stderr)
     else:
         print(output_json)
+    if status != "ok":
+        print(f"NIH RePORTER status: {status.upper()} — see `errors` in the output", file=sys.stderr)
+        return EXIT_PARTIAL
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

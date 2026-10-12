@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "count": 36,
+  "count": 37,
   "entries": [
     {
       "name": "biosketch-and-other-support",
@@ -22,7 +22,7 @@
     {
       "name": "calendar",
       "description": "Read the operator's calendar (agenda, free/busy) and, with approval, create events via CalDAV. Pairs with email-and-scheduling for meeting prep and reminders.",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "category": "communication",
       "tags": [
         "calendar",
@@ -56,7 +56,7 @@
     {
       "name": "data-processing",
       "description": "Build reproducible data pipelines \u2014 load, clean, transform, and validate datasets \u2014 with sanity checks at every step and no silent data loss.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "data",
       "tags": [
         "data",
@@ -122,8 +122,8 @@
     },
     {
       "name": "email-and-scheduling",
-      "description": "Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage \u2014 in the operator's voice, never auto-send, no PHI in messages.",
-      "version": "2.2.0",
+      "description": "Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage \u2014 in the operator's voice, never auto-send, protected information only as the policy permits.",
+      "version": "2.3.0",
       "category": "communication",
       "tags": [
         "email",
@@ -158,9 +158,26 @@
       "path": "skills/firecrawl-research"
     },
     {
+      "name": "funding-data-validation",
+      "description": "Validate and normalize funding-opportunity and funded-award API data (Grants.gov, NIH RePORTER, NSF) before ranking, reporting, or updating a persistent seen list \u2014 fail-closed envelope checks, nonblank identifiers, discovery vs calibration labeling, no secrets in artifacts.",
+      "version": "1.0.1",
+      "category": "grants",
+      "tags": [
+        "grants",
+        "funding",
+        "api",
+        "validation",
+        "provenance"
+      ],
+      "curated": false,
+      "has_blueprint": false,
+      "persona": "",
+      "path": "skills/funding-data-validation"
+    },
+    {
       "name": "funding-opportunity-digest",
-      "description": "Find and rank live funding opportunities matched to the operator's research profile \u2014 NIH, Grants.gov, NSF \u2014 and deliver a concise digest. Works one-off or as a scheduled cron digest.",
-      "version": "1.0.0",
+      "description": "Find and rank live funding opportunities matched to the operator's research profile \u2014 NIH, Grants.gov, NSF \u2014 and deliver a concise digest. Works one-off or as a scheduled cron digest, with a bundled collector that keeps every run reproducible.",
+      "version": "3.0.0",
       "category": "grants",
       "tags": [
         "grants",
@@ -192,14 +209,15 @@
     },
     {
       "name": "infographic",
-      "description": "Turn a markdown brief or a topic into a single-image infographic using the native image generation tool (Nano Banana Pro via OpenRouter), with strong in-image text.",
-      "version": "1.0.0",
+      "description": "Turn a markdown brief, notes or a topic into a single-image infographic that follows the institution's brand. You plan it in a written brief, write every word as HTML, ask the image model only for art without words, combine the two, check the result with a program and by eye, and fix what the checks find.",
+      "version": "3.0.0",
       "category": "presentations",
       "tags": [
         "infographic",
         "image",
         "visual",
-        "nano-banana",
+        "html",
+        "brand",
         "presentations"
       ],
       "curated": false,
@@ -210,7 +228,7 @@
     {
       "name": "literature-alerts",
       "description": "Maintain living literature alerts \u2014 saved PubMed/preprint queries run on a schedule, deduplicated against what the operator has already seen, synthesized into a short what's-actually-new digest.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "research",
       "tags": [
         "research",
@@ -278,7 +296,7 @@
     {
       "name": "note-taker",
       "description": "Capture, list, search, and tag timestamped markdown notes in ~/notes/. Use to jot something down, find a past note, or review recent notes/tags.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "notes",
       "tags": [
         "notes",
@@ -399,7 +417,7 @@
     {
       "name": "research-investigator",
       "description": "Compile an investigator dossier \u2014 publications (PubMed), grants (NIH Reporter), and a web-research profile \u2014 for a named researcher, with false-positive review. Also supports CSV batch mode and a lighter theranostics-relevance screen.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "research",
       "tags": [
         "research",

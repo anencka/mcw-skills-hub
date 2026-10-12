@@ -34,10 +34,16 @@ def _caldav():
         import caldav
         return caldav
     except ImportError:
-        sys.exit("error: caldav library not available — run with /opt/mcwagent/.venv/bin/python3")
+        print("error: caldav library not available — run with /opt/mcwagent/.venv/bin/python3",
+              file=sys.stderr)
+        sys.exit(EXIT_USAGE)
 
 
 KEYS = ("CALDAV_URL", "CALDAV_USERNAME", "CALDAV_PASSWORD")
+
+# Library exit codes (skills-hub DESIGN_PRINCIPLES P2): 0 ok; 1 partial or runtime failure
+# (some calendar could not be read, or the server refused); 2 not configured / bad usage.
+EXIT_OK, EXIT_PARTIAL, EXIT_USAGE = 0, 1, 2
 
 
 def load_env():
@@ -89,8 +95,9 @@ def load_env():
 def client(env):
     url, user, pw = env.get("CALDAV_URL"), env.get("CALDAV_USERNAME"), env.get("CALDAV_PASSWORD")
     if not (url and user and pw):
-        sys.exit("error: missing config: CALDAV_URL / CALDAV_USERNAME / CALDAV_PASSWORD "
-                 "(set them via the Settings tab)")
+        print("error: missing config: CALDAV_URL / CALDAV_USERNAME / CALDAV_PASSWORD "
+              "(set them via the Settings tab)", file=sys.stderr)
+        sys.exit(EXIT_USAGE)
     return _caldav().DAVClient(url=url, username=user, password=pw)
 
 
@@ -112,9 +119,12 @@ def cmd_test(env, _):
 
 
 def _gather(env, days, name=None):
+    """Return (events, failures). A calendar whose search fails is reported in `failures`
+    as (calendar name, error) — never silently dropped, so a partial agenda can't pass
+    for a complete one."""
     now = dt.datetime.now()
     end = now + dt.timedelta(days=days)
-    events = []
+    events, failures = [], []
     for cal in _calendars(env, name):
         try:
             for ev in cal.search(start=now, end=end, event=True, expand=True):
@@ -125,35 +135,55 @@ def _gather(env, days, name=None):
                     "start": _comp_dt(c, "dtstart"),
                     "end": _comp_dt(c, "dtend"),
                 })
-        except Exception as e:  # one bad calendar shouldn't kill the agenda
+        except Exception as e:  # one bad calendar shouldn't kill the agenda — but it must show
+            failures.append((cal.name or "(unnamed)", f"{type(e).__name__}: {e}"))
             print(f"# warning: calendar '{cal.name}' search failed: {e}", file=sys.stderr)
     events.sort(key=lambda x: str(x["start"]))
-    return events
+    return events, failures
+
+
+def _incomplete_banner(failures):
+    """Printed on STDOUT (what the agent reads), first, when any calendar failed."""
+    names = ", ".join(f"'{n}' ({err})" for n, err in failures)
+    return (f"INCOMPLETE: {len(failures)} calendar(s) could not be read: {names}. "
+            "The list below is missing those calendars — do not present it as complete.")
 
 
 def cmd_agenda(env, args):
-    events = _gather(env, args.days, args.calendar)
+    events, failures = _gather(env, args.days, args.calendar)
+    if failures:
+        print(_incomplete_banner(failures))
     if not events:
-        print(f"(no events in the next {args.days} days)")
-        return
+        print(f"(no events in the next {args.days} days"
+              + (" from the calendars that could be read)" if failures else ")"))
     for e in events:
         print(f"{e['start']}  →  {e['end']}   {e['summary']}   [{e['calendar']}]")
+    return EXIT_PARTIAL if failures else EXIT_OK
 
 
 def cmd_freebusy(env, args):
-    events = _gather(env, args.days)
+    events, failures = _gather(env, args.days)
+    if failures:
+        print(_incomplete_banner(failures))
     if not events:
-        print(f"(no busy blocks in the next {args.days} days)")
-        return
+        print(f"(no busy blocks in the next {args.days} days"
+              + (" from the calendars that could be read)" if failures else ")"))
+        return EXIT_PARTIAL if failures else EXIT_OK
     print("Busy:")
     for e in events:
         print(f"  {e['start']} – {e['end']}")
+    return EXIT_PARTIAL if failures else EXIT_OK
 
 
 def cmd_events_json(env, args):
     """Window query for the webapp Calendar tab: JSON on stdout, nothing else (stderr is
     for humans/diagnostics). Values are plain text fields — the caller renders them as
-    text, never HTML (G1). Malformed events in a calendar are skipped, not fatal."""
+    text, never HTML (G1). Malformed events in a calendar are skipped, not fatal.
+
+    CONTRACT (webapp/calendar_api.py): stdout is a bare JSON list and a nonzero exit means
+    "the whole internal calendar failed" (the tab then discards every event). So a single
+    failing calendar here stays a stderr warning with exit 0; changing that needs a
+    matching webapp change. Agent-facing `agenda`/`freebusy` report partials instead."""
     import json
     start = dt.datetime.fromisoformat(args.start)
     end = dt.datetime.fromisoformat(args.end)
@@ -336,9 +366,9 @@ def main():
             shown = env[k] if k == "CALDAV_URL" else "(set)"
             print(f"# {k}={shown} from {sources[k]}", file=sys.stderr)
     try:
-        {"test": cmd_test, "agenda": cmd_agenda, "freebusy": cmd_freebusy,
-         "events-json": cmd_events_json, "ics-json": cmd_ics_json,
-         "create": cmd_create}[args.cmd](env, args)
+        rc = {"test": cmd_test, "agenda": cmd_agenda, "freebusy": cmd_freebusy,
+              "events-json": cmd_events_json, "ics-json": cmd_ics_json,
+              "create": cmd_create}[args.cmd](env, args)
     except Exception as e:
         # caldav auth/connection errors all subclass Exception; SystemExit (missing-config) passes through.
         # Never swallow the URL or the underlying status/reason — a wrong scheme/port (the http://:2079
@@ -351,6 +381,7 @@ def main():
                      "(scheme/port likely wrong; cPanel CalDAV is https://<host>:2080/ — "
                      "otherwise check username / password)")
         sys.exit(f"error: {name}: {detail} (url={url})")
+    sys.exit(rc or EXIT_OK)
 
 
 if __name__ == "__main__":

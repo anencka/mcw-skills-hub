@@ -1,7 +1,7 @@
 ---
 name: note-taker
 description: Capture, list, search, and tag timestamped markdown notes in ~/notes/. Use to jot something down, find a past note, or review recent notes/tags.
-version: 1.0.0
+version: 1.0.1
 metadata:
   hermes:
     tags: [notes, capture, tags, search]
@@ -40,7 +40,8 @@ Show the newest N (default 5): filename, time, and a ~150-char preview of the ac
 Pull every `**Tags:**` line across `~/notes/`, split on commas, and show the unique tags sorted.
 
 ## Notes
-- Always operate inside `~/notes/`. No PHI, no secrets in notes.
+- Always operate inside `~/notes/`. No secrets in notes; PHI and other protected information only
+  where your policy (SOUL, rule 2) permits it.
 - When building previews, skip headers/tags/separators so the snippet is meaningful.
 - Be brief and confirm what you did.
 

@@ -1,7 +1,7 @@
 ---
 name: email-and-scheduling
-description: Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage — in the operator's voice, never auto-send, no PHI in messages.
-version: 2.2.0
+description: Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage — in the operator's voice, never auto-send, protected information only as the policy permits.
+version: 2.3.0
 metadata:
   hermes:
     tags: [email, scheduling, communication, admin]
@@ -73,8 +73,11 @@ For anything calendar/scheduling, use the **`calendar`** skill (CalDAV agenda / 
    concise brief. Afterward, turn notes into clear action items with owners.
 5. **Triage:** group and prioritize tasks/messages; propose next actions; flag anything
    time-sensitive. Keep the operator's task list/notes updated if they use one.
-6. **Privacy:** never include PHI, identifiers, or secrets in drafts or stored notes; flag if the
-   source material contains them.
+6. **Privacy:** never include secrets in drafts or stored notes. PHI, identifiers and other
+   protected information: follow your policy (SOUL, rule 2). Where it does not permit them, leave
+   them out and flag if the source material contains them. Where it does, an email still sends
+   them to someone else — include them only when the operator asks for that, and say in the
+   draft's cover note what protected information it carries.
 
 ## Pitfalls
 - Improvising email — never write a bespoke SMTP/IMAP script or connect to a generic provider
@@ -88,4 +91,5 @@ For anything calendar/scheduling, use the **`calendar`** skill (CalDAV agenda / 
 
 ## Verification
 Output is a review-ready draft (nothing sent until approved), in the right tone, addressing the
-actual asks, with no PHI/secrets; any send went through `himalaya` on the configured mailbox.
+actual asks, with no secrets and no protected information beyond what the policy permits and the
+operator asked to send; any send went through `himalaya` on the configured mailbox.

@@ -1,7 +1,7 @@
 ---
 name: research-investigator
 description: Compile an investigator dossier — publications (PubMed), grants (NIH Reporter), and a web-research profile — for a named researcher, with false-positive review. Also supports CSV batch mode and a lighter theranostics-relevance screen.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [research, investigator, pubmed, nih-reporter, grants, dossier]
@@ -25,6 +25,18 @@ no keys required.
 ## Inputs
 Investigator **name**, **institution** (full or abbreviation, e.g. "MCW"), and a **year range**.
 Ask for any that are missing. For year-only ranges, use `YYYY-01-01` … `YYYY-12-31`.
+
+## Reading the search scripts' results (always, before reviewing records)
+Both scripts write a JSON file whose top-level **`status`** is authoritative, and exit with it:
+
+| Exit | `status` | Meaning | What you do |
+|---|---|---|---|
+| `0` | `ok` | The source was searched completely | Proceed; an empty list really means no matches |
+| `1` | `partial` | Some matches are missing (a failed batch, an unparseable record, or results capped by `--max-results`); `errors` lists the step, message, and affected PMIDs | Proceed with what was retrieved, and say in the summary exactly what is missing and why |
+| `1` | `failed` | The source could not be searched at all | **Never** report "no publications" or "no grants". Report the source as unavailable, with the error message, and offer to retry later |
+| `2` | — | Bad arguments | Fix the command |
+
+Carry `status` and `errors` into the summary's Data Files section.
 
 ## Workflow (single investigator)
 
@@ -75,7 +87,8 @@ Ask for any that are missing. For year-only ranges, use `YYYY-01-01` … `YYYY-1
      status.
    - **Data Files** — point to `publications.json`, `grants.json`, `research_report.md`.
 
-8. **Report** counts (publications, grants, total funding), key themes, and the output location.
+8. **Report** counts (publications, grants, total funding), key themes, and the output location —
+   and, for any source whose `status` was not `ok`, what is missing and why.
 
 ## Batch mode (CSV)
 If given a CSV with columns `name, institution, start_year, end_year`: validate the columns, then
@@ -97,12 +110,16 @@ radiobiology), or `none` — each with a 1–2 sentence rationale. Output a summ
 `~/work/<project>/theranostics-screen/`.
 
 ## Error handling
-- PubMed fails → check connectivity and the `YYYY-MM-DD` date format; try a simpler institution name.
-- NIH Reporter fails → use full institution name (not abbreviation); keep fiscal years 1985–present.
+- PubMed `failed` → check connectivity and the `YYYY-MM-DD` date format; try a simpler institution
+  name. If it still fails, the dossier says PubMed was unavailable — not that there are no papers.
+- NIH Reporter `failed` → use full institution name (not abbreviation); keep fiscal years
+  1985–present. Same rule: unavailable is not zero grants.
+- `partial` because of the retrieval cap → re-run with a higher `--max-results`.
 - No results → broaden years, check spelling, try alternate institution names.
 - Web research fails → proceed with the PubMed + NIH data you have.
 
 ## Verification
 The output dir exists with `publications.json`, `grants.json`, and `investigator_summary.md`; every
 listed publication/grant traces to a verified record (no fabricated entries); counts and totals in
-the summary match the JSON.
+the summary match the JSON; both raw files have `status: ok`, or the summary discloses each
+`partial`/`failed` source and what it is missing.

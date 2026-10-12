@@ -1,0 +1,207 @@
+<!doctype html>
+<!--
+  Infographic starter page (infographic skill). Copy it to page.html, replace the words with
+  the lines of words.txt, and render (add --source <the source file> so the words are checked
+  against it):
+
+      render-html page.html ../my-infographic.png --size 1600x900        (landscape)
+      render-html page.html ../my-infographic.png --size 1080x1350       (portrait: <body class="portrait">)
+      render-html page.html ../my-infographic.png --size 1080x1080       (square: <body class="portrait square">)
+
+  Rules that keep the picture right:
+    * The canvas is fixed: body's width/height equal --size. Everything fits inside it.
+    * Every word is ordinary HTML text, typed exactly as words.txt has it. Never put words in
+      a generated picture, and never in CSS `content:`.
+    * Only files beside this page and fonts installed in the container are used; nothing is
+      fetched from the network.
+    * Art is optional. Each .art box shows its inline icon on a tint; un-comment the <img>
+      above the icon (and save that file beside this page) and the picture takes its place.
+      The three icons here are placeholders: with no picture, draw a simple line icon that
+      suits the block (a few strokes in the same 24x24 viewBox).
+      The same goes for the background. Add class "tinted" to an .art box to pull a picture
+      that came out off-palette into the lead colour.
+    * Colours and fonts are set ONCE, in :root. They are the institution's brand (the
+      brand-guidelines skill): change them there, and only when the operator or the brand kit
+      says so.
+    * The slots are examples. Delete the ones you have no words for. A table in the source
+      has its own slot (commented out near the end): keep its title and column labels.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    /* MCW brand palette (brand-guidelines skill). Lead with MCW Green; the rest are accents. */
+    --lead: #006f66;         /* MCW Green: header band, headings, big numbers */
+    --ink: #0e233c;          /* Dark Blue: body text */
+    --accent: #00bf6f;       /* Bright Green: rules, icons, markers — never small text */
+    --soft: #9be3bf;         /* Light Green: subtitle on the lead colour — at 24px or larger only;
+                                smaller text on the lead colour is white */
+    --tint: rgba(155, 227, 191, 0.32);   /* Light Green, thinned: art boxes without art */
+    --paper: #ffffff;        /* page background when there is no background art */
+    --card: rgba(255, 255, 255, 0.95);   /* what text sits on; keep it nearly opaque */
+    --rule: #c8c9c7;         /* Light Gray: hairlines */
+    /* Franklin Gothic where it is installed, else Calibri or its stand-in (the brand's own
+       fallback), else a plain sans. render-html says which one was really used. */
+    --type: "Franklin Gothic Medium", "Franklin Gothic", "Franklin Gothic Book", Calibri, Carlito,
+            "Liberation Sans", "DejaVu Sans", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    width: 1600px; height: 900px; overflow: hidden; position: relative;
+    font-family: var(--type); color: var(--ink); background: var(--paper);
+  }
+  body.portrait { width: 1080px; height: 1350px; }
+  body.portrait.square { height: 1080px; }          /* square: <body class="portrait square"> */
+
+  /* Background art, if any: fills the page behind everything, under a white veil so that
+     nothing on top has to fight it. */
+  .backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .veil { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.55); }
+  .page { position: relative; height: 100%; display: flex; flex-direction: column; }
+
+  header { background: var(--lead); color: #fff; padding: 34px 56px 30px; }
+  header h1 { margin: 0; font-size: 58px; line-height: 1.08; font-weight: 700; }
+  header p { margin: 10px 0 0; font-size: 28px; color: var(--soft); }
+
+  /* Two shared rows — pictures, then words — so every card's picture is the same height and
+     every heading is on one line across the page, however many bullets a card has. The
+     picture row takes whatever height the words leave: a card is never half empty.
+     Change `repeat(3, 1fr)` to the number of cards. Never centre a card's content. */
+  main { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(150px, 1fr) auto;
+         column-gap: 28px; row-gap: 0; padding: 32px 56px 0; min-height: 0; }
+  .card {
+    background: var(--card); border-radius: 18px; padding: 20px 24px 22px;
+    border-top: 6px solid var(--lead); box-shadow: 0 10px 28px rgba(14, 35, 60, 0.14);
+    display: grid; grid-row: span 2; grid-template-rows: subgrid; min-width: 0;
+  }
+  .art { min-height: 0; border-radius: 12px; background: var(--tint); overflow: hidden;
+         position: relative; display: flex; align-items: center; justify-content: center; }
+  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .art img ~ svg { display: none; }      /* a picture replaces the icon */
+  .art svg { width: 92px; height: 92px; stroke: var(--lead); fill: none; stroke-width: 2.2;
+             stroke-linecap: round; stroke-linejoin: round; }
+  /* A picture in the wrong colours: keep its light and dark, take the hue from the palette. */
+  .art.tinted img { filter: grayscale(1) contrast(1.08); }
+  .art.tinted::after { content: ""; position: absolute; inset: 0; background: var(--lead); mix-blend-mode: color; }
+  .card h2 { margin: 18px 0 8px; font-size: 32px; line-height: 1.15; color: var(--lead); }
+  .card ul { margin: 0; padding-left: 26px; font-size: 24px; line-height: 1.34; }
+  .card li { margin-bottom: 6px; }
+  .card li::marker { color: var(--accent); }
+  .card p { margin: 0; font-size: 24px; line-height: 1.34; }
+
+  /* A row of big numbers. Delete the whole <section> if the source has none. */
+  .stats { display: flex; gap: 28px; padding: 24px 56px 0; }
+  .stat { flex: 1; background: var(--card); border-radius: 18px; padding: 16px 24px; min-width: 0;
+          display: flex; align-items: baseline; gap: 16px; box-shadow: 0 10px 28px rgba(14, 35, 60, 0.14); }
+  .stat b { font-size: 52px; color: var(--lead); white-space: nowrap; }
+  .stat span { font-size: 23px; line-height: 1.28; }
+
+  /* A small table from the source, kept as a table: its title, its column labels, its rows.
+     Delete the whole <section> if the source has none. */
+  .table { margin: 24px 56px 0; background: var(--card); border-radius: 18px; padding: 16px 24px 18px;
+           box-shadow: 0 10px 28px rgba(14, 35, 60, 0.14); display: flex; gap: 32px; align-items: center; }
+  .table h2 { margin: 0; font-size: 30px; line-height: 1.15; color: var(--lead); flex: none; max-width: 300px; }
+  .table table { flex: 1; border-collapse: collapse; font-size: 24px; }
+  .table th { text-align: left; font-weight: 700; color: var(--lead); background: var(--tint); padding: 7px 16px; }
+  .table td { padding: 7px 16px; border-bottom: 1px solid var(--rule); }
+  .table tr:last-child td { border-bottom: 0; }
+
+  /* On its own strip, so it stays readable over background art. */
+  footer { margin-top: 22px; padding: 12px 56px 14px; font-size: 18px; color: var(--ink); background: var(--card);
+           border-top: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 24px; }
+  /* Only for an official piece the operator asked for: the approved logo file, never a drawing. */
+  footer img.logo { height: 44px; width: auto; }
+
+  /* Portrait: the cards become rows, picture on the left. */
+  body.portrait header { padding: 40px 48px 34px; }
+  body.portrait header h1 { font-size: 60px; }
+  body.portrait main { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-rows: 1fr; row-gap: 22px; padding: 28px 48px 0; }
+  body.portrait .card { display: flex; grid-row: auto; flex-direction: row; gap: 24px; align-items: center; border-top: 0; border-left: 6px solid var(--lead); }
+  body.portrait .art { flex: none; width: 300px; align-self: stretch; min-height: 200px; }
+  body.portrait .card h2 { margin-top: 0; }
+  body.portrait .table { margin: 22px 48px 0; flex-direction: column; align-items: stretch; gap: 10px; }
+  body.portrait .table h2 { max-width: none; }
+  body.portrait .stats { padding: 22px 48px 0; gap: 18px; }
+  body.portrait .stat { flex-direction: column; gap: 4px; align-items: flex-start; }
+  body.portrait footer { padding: 12px 48px 14px; }
+
+  /* Square: the same rows with less air. It holds less — expect to drop a block. */
+  body.square header { padding: 28px 48px 24px; }
+  body.square header h1 { font-size: 50px; }
+  body.square header p { font-size: 26px; margin-top: 6px; }
+  body.square main { row-gap: 16px; padding-top: 22px; }
+  body.square .card { padding: 14px 22px; }
+  body.square .art { width: 170px; min-height: 0; }
+  body.square .art svg { width: 64px; height: 64px; }
+  body.square .card h2 { font-size: 28px; margin-bottom: 4px; }
+  body.square .card li { margin-bottom: 2px; }
+  body.square .stats, body.square .table { padding-top: 0; margin-top: 16px; }
+  body.square .stat { padding: 10px 20px 12px; }
+  body.square .stat b { font-size: 44px; }
+  body.square footer { margin-top: 16px; }
+</style>
+</head>
+<body>
+  <!-- <img class="backdrop" src="background.png" alt=""><div class="veil"></div> -->
+  <div class="page">
+    <header>
+      <h1>Title of the infographic</h1>
+      <p>One line that says who it is for or what it answers</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <div class="art">
+          <!-- <img src="panel1.png" alt=""> -->
+          <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.5h6V4M9 10h6M9 14h6M9 18h3"/></svg>
+        </div>
+        <div>
+          <h2>First section</h2>
+          <ul><li>A short point, one line if possible</li><li>A second short point</li><li>A third</li></ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="art">
+          <!-- <img src="panel2.png" alt=""> -->
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        </div>
+        <div>
+          <h2>Second section</h2>
+          <ul><li>A short point</li><li>A second short point</li><li>A third</li></ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="art">
+          <!-- <img src="panel3.png" alt=""> -->
+          <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3"/></svg>
+        </div>
+        <div>
+          <h2>Third section</h2>
+          <ul><li>A short point</li><li>A second short point</li></ul>
+        </div>
+      </div>
+    </main>
+
+    <section class="stats">
+      <div class="stat"><b>42%</b><span>what this number measures, in a few words</span></div>
+      <div class="stat"><b>1,280</b><span>what this number measures</span></div>
+      <div class="stat"><b>3×</b><span>what this number measures</span></div>
+    </section>
+
+    <!-- A table in the source stays a table. Use this OR the row of numbers above, rarely both:
+    <section class="table">
+      <h2>Title of the table</h2>
+      <table>
+        <tr><th>First column</th><th>Second column</th></tr>
+        <tr><td>A row</td><td>12</td></tr>
+        <tr><td>Another row</td><td>34</td></tr>
+      </table>
+    </section>
+    -->
+
+    <footer><span>Source: where the numbers come from</span><span>Prepared by / date</span></footer>
+  </div>
+</body>
+</html>

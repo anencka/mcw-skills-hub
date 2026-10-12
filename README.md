@@ -4,17 +4,20 @@ The institution's shared library of agent skills. Anyone's agent can **browse** 
 catalog, **install** a skill with one click (or one command), and **modify** their local
 copy freely — installs are copies, never links. Improvements flow back as pull requests.
 
-This directory is designed to be published as its own repository (e.g.
-`mcw/skills-hub` on the institution's GitHub/Forgejo). Until then it lives inside the
-main project repo and works the same way.
+This directory is the hub's working copy. It lives inside the main project repo and is
+published wholesale to its own public repository by `tools/publish.sh` (which re-runs
+`sync` + `catalog` first and refuses to publish protected content); the published copy
+works the same way.
 
 ## Layout (tap-compatible)
 
 ```
 skills-hub/
 ├── README.md
+├── DESIGN_PRINCIPLES.md  # how a skill should be built; the maintainers' review checklist
 ├── catalog.json          # generated — do not edit by hand (tools/hub.py catalog)
 ├── tools/hub.py          # sync + catalog generator
+├── tools/publish.sh      # publish this directory to the public hub repository
 └── skills/
     └── <skill-name>/     # FLAT — one dir per skill, category lives in frontmatter
         ├── SKILL.md      # required; YAML frontmatter (name, description, metadata.hermes.*)
@@ -36,8 +39,13 @@ Every install goes through the agent's quarantine + security scan before it is e
 
 - **Baseline skills** are maintained in `../deploy/hermes-skills/<category>/<name>/`
   (the source of truth — they ship baked into the container image) and are mirrored here
-  by `tools/hub.py sync` so the hub catalog shows everything available.
-- **Community skills** live only here, under `skills/`, added by pull request.
+  by `tools/hub.py sync` so the hub catalog shows everything available. Skills carrying
+  institutional branding or other protected material are **not** mirrored: `hub.py` skips
+  the ones named in its `EXCLUDE_SKILLS` and any marked `metadata.hermes.internal: true`;
+  they remain available in-container from the baked-in directory.
+- **Community skills** live only here, under `skills/`, added by pull request. `sync` leaves
+  them untouched. Hub-only **persona packs** (`persona-*`) are of this kind: a pack composes
+  the agent team that is already baked into the image for a role — it cannot add new agents.
 
 ## Contributing a skill
 
@@ -48,9 +56,14 @@ Every install goes through the agent's quarantine + security scan before it is e
    related_skills under `metadata.hermes`. A skill that should run on a schedule can
    declare `metadata.hermes.blueprint: {schedule, prompt}` — it then appears as a
    one-click suggestion in the Automations tab.
-3. House rules: write for the *operator*; read `~/work-profile/*` fresh, never cache it;
+3. Follow [`DESIGN_PRINCIPLES.md`](DESIGN_PRINCIPLES.md) — deterministic steps in a tested
+   script, designated locations, run manifests, fail-closed data handling, and a `verify`
+   command; its review checklist is what maintainers apply. House rules: write for the *operator*; read `~/work-profile/*` fresh, never cache it;
    spell out exact commands/API calls so an open-weight model doesn't guess; **no
    fabrication** — citations, deadlines, and records come from a source or the operator.
+   A baseline skill that bundles scripts should ship a `tests/` directory and be added to
+   `../deploy/tests/skill-scripts-test.sh`, which runs those unit tests (no network) as part of
+   the image's update gate.
 4. Run `python3 tools/hub.py catalog` and include the regenerated `catalog.json`.
 5. Open a pull request. A maintainer review marks the skill `curated: true` in its
    frontmatter (`metadata.hermes.curated`) before merge — the catalog badge users see.
@@ -60,6 +73,7 @@ Every install goes through the agent's quarantine + security scan before it is e
 ```bash
 python3 tools/hub.py sync      # mirror baseline skills from ../deploy/hermes-skills
 python3 tools/hub.py catalog   # rebuild catalog.json from skills/
+tools/publish.sh [owner/repo]  # maintainers: sync + catalog, then publish to the public repo
 ```
 
 `catalog.json` is what the web dashboard's "Browse catalog" reads (via

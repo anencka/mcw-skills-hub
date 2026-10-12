@@ -1,7 +1,7 @@
 ---
 name: literature-alerts
 description: Maintain living literature alerts — saved PubMed/preprint queries run on a schedule, deduplicated against what the operator has already seen, synthesized into a short what's-actually-new digest.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [research, literature, pubmed, alerts, digest, cron]
@@ -9,7 +9,7 @@ metadata:
     related_skills: [literature-research, reference-management, funding-opportunity-digest]
     blueprint:
       schedule: "0 7 * * 1"
-      prompt: "Run the literature-alerts skill: run every query in ~/work/lit-alerts/queries.md against PubMed (and preprints where configured), dedupe against seen.txt, email the what's-new digest via himalaya, then update seen.txt."
+      prompt: "Run the literature-alerts skill: run every query in ~/work/lit-alerts/queries.md against PubMed (and preprints where configured) and dedupe against seen.txt. If any alert has new papers or is due a zero-results flag, email the what's-new digest via himalaya, then update seen.txt. If nothing is new and no flag is due, send nothing and write ~/work/lit-alerts/runs/YYYY-MM-DD/run-summary.md instead."
 ---
 # Living Literature Alerts
 
@@ -44,11 +44,16 @@ show them the raw query strings so they can tune them.
    alert's stated "why", not by journal name alone.
 4. **Write the digest** per alert: 1-2 sentence plain summary per paper of what's new
    (from the abstract — not a rephrased title), full citation with PMID/DOI link, and a
-   one-line "why it matters to you" tied to the operator's projects. Nothing new this
-   period → say exactly that in one line; never pad.
+   one-line "why it matters to you" tied to the operator's projects. An alert with nothing
+   new gets exactly one line saying so inside a digest that has news elsewhere; never pad.
+   **Quiet run:** if no alert has anything new and no alert is due a zero-results flag
+   (see Pitfalls), do **not** send an email. Write
+   `~/work/lit-alerts/runs/YYYY-MM-DD/run-summary.md` instead: the alerts run, the window,
+   the per-alert hit counts, and "nothing new". A weekly "nothing new" email trains the
+   operator to ignore the alert.
 5. **Append the surfaced ids to `seen.txt`** — this is what keeps the alert trustworthy.
-6. **Deliver + schedule**: send via himalaya email for unattended runs (never
-   `hermes send` from a schedule). If this isn't recurring yet, offer to register the cron
+6. **Deliver + schedule**: when there is something to report, send via himalaya email for
+   unattended runs (never `hermes send` from a schedule). If this isn't recurring yet, offer to register the cron
    job at the requested cadence. Offer to push kept papers to `reference-management`.
 
 ## Pitfalls
@@ -57,10 +62,14 @@ show them the raw query strings so they can tune them.
 - Forgetting to update `seen.txt` (repeats destroy trust in the digest) or updating it
   before the digest actually went out (a failed send then loses those papers forever).
 - Queries that silently return 0 forever — if an alert returns nothing for several runs,
-  flag it once and suggest loosening the query, don't just stay quiet.
+  flag it once and suggest loosening the query, don't just stay quiet. That flag is
+  substantive: it is a reason to send the digest even when no alert has new papers.
+  Check the prior `runs/*/run-summary.md` files to count consecutive empty runs.
+- Emailing on a quiet run. Nothing new and no flag due means no email, only a run summary.
 - Ranking by recency alone; the operator's "why" line in `queries.md` is the ranking rubric.
 
 ## Verification
 Every digest item is new (absent from prior `seen.txt`), has a resolving PMID/DOI, and its
 summary is grounded in the actual abstract; `seen.txt` was updated after successful
-delivery; empty periods are reported honestly.
+delivery; a quiet run sent no email and left a `run-summary.md` under
+`~/work/lit-alerts/runs/`.
