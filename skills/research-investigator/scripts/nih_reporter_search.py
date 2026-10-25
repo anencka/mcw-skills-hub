@@ -134,19 +134,23 @@ def search_nih_reporter(pi_names: list, institutions: list,
             "fiscal_years": fiscal_years,
             "org_names": institutions
         },
+        # The API silently drops a name it does not know, so a wrong one here shows up only as
+        # an empty field in the output. These were checked against a live response (2026-10).
+        # The organization's name, city, state and department are inside "Organization".
         "include_fields": [
             "ProjectNum",
+            "CoreProjectNum",
             "ProjectNumSplit",
+            "ProjectSerialNum",
+            "ActivityCode",
             "ContactPiName",
-            "AllText",
+            "PrincipalInvestigators",
+            "Organization",
             "FullStudySection",
             "SubprojectId",
             "FiscalYear",
-            "Organization",
             "ProjectTitle",
             "AbstractText",
-            "PhrProjectNum",
-            "PiNames",
             "ProjectStartDate",
             "ProjectEndDate",
             "AwardAmount",
@@ -156,21 +160,11 @@ def search_nih_reporter(pi_names: list, institutions: list,
             "CovidResponse",
             "DirectCostAmt",
             "IndirectCostAmt",
-            "OrgCity",
-            "OrgCountry",
-            "OrgDept",
-            "OrgDistrict",
-            "OrgDuns",
-            "OrgFips",
-            "OrgName",
-            "OrgState",
-            "OrgZipcode",
             "ProgramOfficers",
             "ProjectDetailUrl",
             "AwardNoticeDate",
             "IsActive",
             "AwardType",
-            "NciDivisionProgram",
             "ArraFunded",
             "BudgetStart",
             "BudgetEnd"
@@ -214,8 +208,9 @@ EXIT_OK, EXIT_PARTIAL, EXIT_USAGE = 0, 1, 2
 def parse_grant_record(record: dict) -> dict:
     """Parse a NIH Reporter grant record into a structured format."""
 
-    # Extract PI information
-    pi_names = record.get("pi_names", []) or []
+    # Extract PI information (the v2 API's field is principal_investigators; pi_names is the
+    # name of the search criterion, kept as a fallback)
+    pi_names = record.get("principal_investigators") or record.get("pi_names") or []
     contact_pi = record.get("contact_pi_name", "")
 
     pis = []
@@ -227,14 +222,22 @@ def parse_grant_record(record: dict) -> dict:
             "is_contact_pi": pi.get("is_contact_pi", False)
         })
 
-    # Extract organization info
+    # Extract organization info (nested under "organization" in the v2 API)
+    organization = record.get("organization") or {}
+
+    def org_field(key, *nested):
+        for name in nested:
+            if organization.get(name):
+                return organization[name]
+        return record.get(key, "") or ""
+
     org = {
-        "name": record.get("org_name", ""),
-        "city": record.get("org_city", ""),
-        "state": record.get("org_state", ""),
-        "country": record.get("org_country", ""),
-        "department": record.get("org_dept", ""),
-        "zip": record.get("org_zipcode", "")
+        "name": org_field("org_name", "org_name"),
+        "city": org_field("org_city", "org_city", "city"),
+        "state": org_field("org_state", "org_state"),
+        "country": org_field("org_country", "org_country", "country"),
+        "department": org_field("org_dept", "dept_type"),
+        "zip": org_field("org_zipcode", "org_zipcode")
     }
 
     # Extract funding info
@@ -265,11 +268,17 @@ def parse_grant_record(record: dict) -> dict:
         if match:
             mechanism = match.group(1)
 
+    agency_ic_admin = record.get("agency_ic_admin") or {}
+    administering_ic = (project_num_split.get("ic_code") or project_num_split.get("administering_ic")
+                        or agency_ic_admin.get("code") or "")
+
     return {
         "project_number": project_num,
+        # e.g. R01CA123456: the same for every fiscal year, supplement and resubmission of one grant
+        "core_project_number": record.get("core_project_num", "") or "",
         "project_number_components": {
             "activity_code": project_num_split.get("activity_code", ""),
-            "administering_ic": project_num_split.get("administering_ic", ""),
+            "administering_ic": administering_ic,
             "application_type": project_num_split.get("appl_type_code", ""),
             "serial_number": project_num_split.get("serial_num", ""),
             "support_year": project_num_split.get("support_year", ""),
@@ -306,6 +315,23 @@ def parse_grant_record(record: dict) -> dict:
     }
 
 
+def grant_key(grant: dict) -> str:
+    """The core project number that groups one grant's yearly records.
+
+    RePORTER's own core_project_num first; else activity code + IC + serial number, but only
+    when all three are present (a partial key such as "R01" would merge different grants);
+    else the full project number, which never merges anything.
+    """
+    if grant.get("core_project_number"):
+        return grant["core_project_number"]
+    components = grant.get("project_number_components", {}) or {}
+    parts = [components.get("activity_code", ""), components.get("administering_ic", ""),
+             components.get("serial_number", "")]
+    if all(parts):
+        return "".join(parts)
+    return grant.get("project_number") or "unknown"
+
+
 def aggregate_grants(grants: list) -> list:
     """
     Aggregate multi-year grant records into single grant entries.
@@ -317,13 +343,7 @@ def aggregate_grants(grants: list) -> list:
     grant_map = {}
 
     for grant in grants:
-        # Use the core project number (activity code + IC + serial number)
-        components = grant.get("project_number_components", {})
-        core_num = f"{components.get('activity_code', '')}{components.get('administering_ic', '')}{components.get('serial_num', '')}"
-
-        if not core_num:
-            # Fall back to full project number
-            core_num = grant.get("project_number", "unknown")
+        core_num = grant_key(grant)
 
         if core_num not in grant_map:
             grant_map[core_num] = {

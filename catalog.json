@@ -210,7 +210,7 @@
     {
       "name": "infographic",
       "description": "Turn a markdown brief, notes or a topic into a single-image infographic that follows the institution's brand. You plan it in a written brief, write every word as HTML, ask the image model only for art without words, combine the two, check the result with a program and by eye, and fix what the checks find.",
-      "version": "3.0.0",
+      "version": "3.5.0",
       "category": "presentations",
       "tags": [
         "infographic",
@@ -417,7 +417,7 @@
     {
       "name": "research-investigator",
       "description": "Compile an investigator dossier \u2014 publications (PubMed), grants (NIH Reporter), and a web-research profile \u2014 for a named researcher, with false-positive review. Also supports CSV batch mode and a lighter theranostics-relevance screen.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "category": "research",
       "tags": [
         "research",

@@ -1,7 +1,7 @@
 ---
 name: research-investigator
 description: Compile an investigator dossier — publications (PubMed), grants (NIH Reporter), and a web-research profile — for a named researcher, with false-positive review. Also supports CSV batch mode and a lighter theranostics-relevance screen.
-version: 1.1.0
+version: 1.1.1
 metadata:
   hermes:
     tags: [research, investigator, pubmed, nih-reporter, grants, dossier]
@@ -65,6 +65,10 @@ Carry `status` and `errors` into the summary's Data Files section.
        "<name>" "<institution>" <start_year> <end_year> \
        --output ~/work/<project>/investigator-profiles/<name_slug>/nih_reporter_raw.json
    ```
+   Each entry in `grants` is one grant (one core project number, such as `R01CA123456`) with its
+   yearly records, supplements and resubmissions folded in; count grants from these entries. A
+   `nih_reporter_raw.json` written before version 1.1.1 may have merged different grants of one
+   activity code into a single entry (`core_project_number` reads just `R01`) — run it again.
 
 5. **Review NIH Reporter for false positives.** Confirm the target is a PI / contact PI (not an
    org-only match), same name-variant flexibility. Write cleaned `grants.json` with `verified` +

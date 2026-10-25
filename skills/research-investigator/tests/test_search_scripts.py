@@ -125,6 +125,68 @@ class NihReporterTests(unittest.TestCase):
         self.assertEqual((rc, out["status"]), (NIH.EXIT_PARTIAL, "partial"))
         self.assertIn("incomplete", out["errors"][0]["message"])
 
+    def test_three_r01s_stay_three_grants_with_their_organization_and_pis(self):
+        """Yearly records group by core project number. The old key read a component under
+        the wrong name, so every R01 of one investigator merged into a single "R01" grant,
+        and the organization and PIs came back empty (requested under names the API ignores)."""
+        def record(project_num, fy, amount, co_pi=False):
+            appl, rest = project_num[0], project_num[1:]
+            core, year = rest.split("-")
+            pis = [{"full_name": "Jane Q Doe", "first_name": "Jane", "last_name": "Doe", "is_contact_pi": True}]
+            if co_pi:
+                pis.append({"full_name": "Sam Roe", "first_name": "Sam", "last_name": "Roe", "is_contact_pi": False})
+            return {
+                "project_num": project_num, "core_project_num": core, "fiscal_year": fy,
+                "award_amount": amount, "project_title": f"Grant {core}", "contact_pi_name": "DOE, JANE Q",
+                "principal_investigators": pis,
+                "organization": {"org_name": "EXAMPLE UNIVERSITY", "org_city": "SPRINGFIELD",
+                                 "org_state": "ZZ", "dept_type": "RADIOLOGY"},
+                "project_num_split": {"appl_type_code": appl, "activity_code": "R01", "ic_code": core[3:5],
+                                      "serial_num": core[5:], "support_year": year[:2], "suffix_code": year[2:]},
+                "agency_ic_admin": {"code": core[3:5], "abbreviation": "NIBIB", "name": "Institute"},
+            }
+        records = [
+            record("5R01EB000003-02", 2024, 300, co_pi=True), record("1R01EB000003-01A1", 2023, 310, co_pi=True),
+            record("5R01EB000002-03", 2023, 200), record("5R01EB000002-02", 2022, 200),
+            record("1R01EB000002-01A1", 2021, 210),
+            record("5R01EB000001-02", 2021, 100), record("3R01EB000001-01S1", 2020, 50),
+            record("1R01EB000001-01", 2020, 100),
+        ]
+        sent = []
+
+        def opener(req, timeout=None):
+            sent.append(json.loads(req.data))
+            return FakeResponse(json.dumps({"meta": {"total": len(records)}, "results": records}))
+        rc, out = run_main(NIH, NIH_ARGV, opener)
+        self.assertEqual((rc, out["status"]), (NIH.EXIT_OK, "ok"))
+        for name in ("CoreProjectNum", "PrincipalInvestigators", "Organization", "ProjectNumSplit"):
+            self.assertIn(name, sent[0]["include_fields"])
+        self.assertEqual(out["summary"]["unique_grants"], 3)
+        self.assertEqual(out["summary"]["total_funding"], 1470)
+        by_core = {g["core_project_number"]: g for g in out["grants"]}
+        self.assertEqual({k: g["total_award_amount"] for k, g in by_core.items()},
+                         {"R01EB000003": 610, "R01EB000002": 610, "R01EB000001": 250})
+        self.assertEqual(len(by_core["R01EB000001"]["project_numbers"]), 3)   # the supplement stays in
+        for grant in out["grants"]:
+            self.assertEqual(grant["organization"]["name"], "EXAMPLE UNIVERSITY")
+            self.assertEqual(grant["organization"]["department"], "RADIOLOGY")
+            self.assertEqual(grant["contact_pi"], "DOE, JANE Q")
+            self.assertEqual(grant["funding_institute"], "NIBIB")
+        self.assertEqual([p["name"] for p in by_core["R01EB000003"]["principal_investigators"]],
+                         ["Jane Q Doe", "Sam Roe"])
+
+        # Without core_project_num the key is activity + IC + serial; a partial key never merges.
+        for r in records:
+            del r["core_project_num"]
+        rc, out = run_main(NIH, NIH_ARGV, opener)
+        self.assertEqual(sorted(g["core_project_number"] for g in out["grants"]),
+                         ["R01EB000001", "R01EB000002", "R01EB000003"])
+        for r in records:
+            r["project_num_split"]["ic_code"] = ""
+            r["agency_ic_admin"] = None
+        rc, out = run_main(NIH, NIH_ARGV, opener)
+        self.assertEqual(out["summary"]["unique_grants"], len(records))
+
 
 class PubMedTests(unittest.TestCase):
     def test_outage_is_failed_not_empty_success(self):
@@ -157,6 +219,27 @@ class PubMedTests(unittest.TestCase):
     def test_success_is_ok(self):
         rc, out = run_main(PUBMED, PUBMED_ARGV, pubmed_opener(["111", "222"]))
         self.assertEqual((rc, out["status"], out["total_results"]), (PUBMED.EXIT_OK, "ok", 2))
+
+    def test_doi_and_pmc_are_the_articles_own_not_a_cited_papers(self):
+        """The reference list carries ArticleIdLists too; a search over all of them returned
+        a cited paper's DOI for a 2026 Nature article."""
+        def xml(elocation):
+            return f"""<PubmedArticleSet><PubmedArticle>
+  <MedlineCitation><PMID>42875489</PMID><Article>
+    <ArticleTitle>An article</ArticleTitle>{elocation}
+  </Article></MedlineCitation>
+  <PubmedData>
+    <ArticleIdList><ArticleId IdType="pubmed">42875489</ArticleId>
+      <ArticleId IdType="doi">10.1038/s41586-026-00001-x</ArticleId>
+      <ArticleId IdType="pmc">PMC1000001</ArticleId></ArticleIdList>
+    <ReferenceList><Reference><Citation>A cited paper</Citation>
+      <ArticleIdList><ArticleId IdType="doi">10.1093/bioinformatics/bty388</ArticleId>
+        <ArticleId IdType="pmc">PMC6000002</ArticleId></ArticleIdList></Reference></ReferenceList>
+  </PubmedData></PubmedArticle></PubmedArticleSet>"""
+        own = '<ELocationID EIdType="doi" ValidYN="Y">10.1038/s41586-026-00001-x</ELocationID>'
+        for elocation in (own, ""):            # from ELocationID, and from PubmedData alone
+            [rec] = PUBMED.parse_pubmed_xml(xml(elocation))
+            self.assertEqual((rec["doi"], rec["pmc_id"]), ("10.1038/s41586-026-00001-x", "PMC1000001"))
 
 
 if __name__ == "__main__":

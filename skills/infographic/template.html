@@ -5,8 +5,8 @@
   against it):
 
       render-html page.html ../my-infographic.png --size 1600x900        (landscape)
-      render-html page.html ../my-infographic.png --size 1080x1350       (portrait: <body class="portrait">)
-      render-html page.html ../my-infographic.png --size 1080x1080       (square: <body class="portrait square">)
+      render-html page.html ../my-infographic.png --size 1080x1350       (portrait: body class "portrait")
+      render-html page.html ../my-infographic.png --size 1080x1080       (square: body class "portrait square")
 
   Rules that keep the picture right:
     * The canvas is fixed: body's width/height equal --size. Everything fits inside it.
@@ -18,8 +18,17 @@
       above the icon (and save that file beside this page) and the picture takes its place.
       The three icons here are placeholders: with no picture, draw a simple line icon that
       suits the block (a few strokes in the same 24x24 viewBox).
-      The same goes for the background. Add class "tinted" to an .art box to pull a picture
-      that came out off-palette into the lead colour.
+      Default: tinted panels. Each card picture is drawn on pale mint and moved to the card
+      tint with art-tint; its box has class "art boxed" (the same tint, so the box and the
+      picture are one panel). Floating cut-outs (art-cutout, a PNG transparent around the
+      subject), only when the operator asks for them: remove "boxed".
+      Whenever there is art, there is a background picture too: un-comment the backdrop line
+      at the top of the page body. It shows around the cards and faintly through them. With
+      no art at all, the page keeps its own soft shading (the body's background below).
+      Add class "tinted" to an .art box to pull a picture that came out off-palette into the
+      lead colour.
+    * Edit this page in place: replace the example words where they are. Never cut the file
+      at a tag name and paste a new page body in.
     * Colours and fonts are set ONCE, in :root. They are the institution's brand (the
       brand-guidelines skill): change them there, and only when the operator or the brand kit
       says so.
@@ -38,8 +47,12 @@
     --soft: #9be3bf;         /* Light Green: subtitle on the lead colour — at 24px or larger only;
                                 smaller text on the lead colour is white */
     --tint: rgba(155, 227, 191, 0.32);   /* Light Green, thinned: art boxes without art */
-    --paper: #ffffff;        /* page background when there is no background art */
-    --card: rgba(255, 255, 255, 0.95);   /* what text sits on; keep it nearly opaque */
+    --art-bg: rgb(200, 240, 220);   /* = art-tint's default: Light Green #9BE3BF at ~55% over white */
+    --paper: #ffffff;        /* page background, under the shading or the background art */
+    --card: rgba(255, 255, 255, 0.57);   /* frosted glass: the background shows through every
+                                            card, softened by the blur below. render-html
+                                            measures the contrast of the text on it in the
+                                            rendered picture. */
     --rule: #c8c9c7;         /* Light Gray: hairlines */
     /* Franklin Gothic where it is installed, else Calibri or its stand-in (the brand's own
        fallback), else a plain sans. render-html says which one was really used. */
@@ -50,15 +63,23 @@
   html, body { margin: 0; }
   body {
     width: 1600px; height: 900px; overflow: hidden; position: relative;
-    font-family: var(--type); color: var(--ink); background: var(--paper);
+    font-family: var(--type); color: var(--ink);
+    /* Soft shading in the palette's tints (Light Green and MCW Green, thinned), so a page with
+       no background art is not flat white. Background art covers it. */
+    background:
+      radial-gradient(ellipse 70% 60% at 100% 100%, rgba(155, 227, 191, 0.42), transparent 70%),
+      radial-gradient(ellipse 55% 50% at 0% 30%, rgba(0, 111, 102, 0.08), transparent 70%),
+      linear-gradient(160deg, transparent 30%, rgba(155, 227, 191, 0.22) 100%),
+      var(--paper);
   }
   body.portrait { width: 1080px; height: 1350px; }
-  body.portrait.square { height: 1080px; }          /* square: <body class="portrait square"> */
+  body.portrait.square { height: 1080px; }          /* square: body class "portrait square" */
 
-  /* Background art, if any: fills the page behind everything, under a white veil so that
-     nothing on top has to fight it. */
+  /* Background art: fills the page behind everything. The veil only softens it — the art is
+     meant to be seen around the cards. If the art is busy or dark, strengthen the veil (up
+     to 0.5) rather than dropping the art. */
   .backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .veil { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.55); }
+  .veil { position: absolute; inset: 0; background: rgba(255, 255, 255, 0); }
   .page { position: relative; height: 100%; display: flex; flex-direction: column; }
 
   header { background: var(--lead); color: #fff; padding: 34px 56px 30px; }
@@ -71,6 +92,8 @@
      Change `repeat(3, 1fr)` to the number of cards. Never centre a card's content. */
   main { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(150px, 1fr) auto;
          column-gap: 28px; row-gap: 0; padding: 32px 56px 0; min-height: 0; }
+  /* Frosted glass: whatever is behind a card is blurred, so text on it stays calm. */
+  .card, .stat, .table, footer { -webkit-backdrop-filter: blur(6px) saturate(1.1); backdrop-filter: blur(6px) saturate(1.1); }
   .card {
     background: var(--card); border-radius: 18px; padding: 20px 24px 22px;
     border-top: 6px solid var(--lead); box-shadow: 0 10px 28px rgba(14, 35, 60, 0.14);
@@ -78,10 +101,19 @@
   }
   .art { min-height: 0; border-radius: 12px; background: var(--tint); overflow: hidden;
          position: relative; display: flex; align-items: center; justify-content: center; }
-  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* Floating (no "boxed"): a cut-out (art-cutout: transparent around the subject), shown
+     whole on the card — no box behind it. The tint stays only for an icon. */
+  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+             filter: drop-shadow(0 8px 14px rgba(14, 35, 60, 0.16)); }
+  .art:has(img) { background: transparent; }
   .art img ~ svg { display: none; }      /* a picture replaces the icon */
   .art svg { width: 92px; height: 92px; stroke: var(--lead); fill: none; stroke-width: 2.2;
              stroke-linecap: round; stroke-linejoin: round; }
+  /* The default, a tinted panel (class "art boxed"): the picture, its background moved to
+     --art-bg by art-tint, is shown whole in its box (never cropped); where the box is another
+     shape than the picture, the room around it is the same tint, so the join does not show. */
+  .art.boxed, .art.boxed:has(img) { background: var(--art-bg); }
+  .art.boxed img { object-fit: contain; object-position: center; filter: none; }
   /* A picture in the wrong colours: keep its light and dark, take the hue from the palette. */
   .art.tinted img { filter: grayscale(1) contrast(1.08); }
   .art.tinted::after { content: ""; position: absolute; inset: 0; background: var(--lead); mix-blend-mode: color; }
@@ -91,15 +123,20 @@
   .card li::marker { color: var(--accent); }
   .card p { margin: 0; font-size: 24px; line-height: 1.34; }
 
-  /* A row of big numbers. Delete the whole <section> if the source has none. */
+  /* A row of big numbers. Delete the whole section if the source has none. */
   .stats { display: flex; gap: 28px; padding: 24px 56px 0; }
   .stat { flex: 1; background: var(--card); border-radius: 18px; padding: 16px 24px; min-width: 0;
           display: flex; align-items: baseline; gap: 16px; box-shadow: 0 10px 28px rgba(14, 35, 60, 0.14); }
   .stat b { font-size: 52px; color: var(--lead); white-space: nowrap; }
   .stat span { font-size: 23px; line-height: 1.28; }
+  /* Numbers first (a profile, a summary): the same section moved above the cards, with class
+     "stats lead" — bigger numbers, each label under its number. Then two or three cards. */
+  .stats.lead { padding-top: 28px; }
+  .stats.lead .stat { flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 24px 16px; }
+  .stats.lead .stat b { font-size: 66px; line-height: 1; }
 
   /* A small table from the source, kept as a table: its title, its column labels, its rows.
-     Delete the whole <section> if the source has none. */
+     Delete the whole section if the source has none. */
   .table { margin: 24px 56px 0; background: var(--card); border-radius: 18px; padding: 16px 24px 18px;
            box-shadow: 0 10px 28px rgba(14, 35, 60, 0.14); display: flex; gap: 32px; align-items: center; }
   .table h2 { margin: 0; font-size: 30px; line-height: 1.15; color: var(--lead); flex: none; max-width: 300px; }
@@ -140,11 +177,12 @@
   body.square .stats, body.square .table { padding-top: 0; margin-top: 16px; }
   body.square .stat { padding: 10px 20px 12px; }
   body.square .stat b { font-size: 44px; }
+  body.square .stats.lead .stat b { font-size: 54px; }
   body.square footer { margin-top: 16px; }
 </style>
 </head>
 <body>
-  <!-- <img class="backdrop" src="background.png" alt=""><div class="veil"></div> -->
+  <!-- With art: <img class="backdrop" src="background.png" alt=""><div class="veil"></div> -->
   <div class="page">
     <header>
       <h1>Title of the infographic</h1>
@@ -153,7 +191,7 @@
 
     <main>
       <div class="card">
-        <div class="art">
+        <div class="art boxed">
           <!-- <img src="panel1.png" alt=""> -->
           <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.5h6V4M9 10h6M9 14h6M9 18h3"/></svg>
         </div>
@@ -163,7 +201,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="art">
+        <div class="art boxed">
           <!-- <img src="panel2.png" alt=""> -->
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         </div>
@@ -173,7 +211,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="art">
+        <div class="art boxed">
           <!-- <img src="panel3.png" alt=""> -->
           <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3"/></svg>
         </div>
@@ -184,8 +222,9 @@
       </div>
     </main>
 
+    <!-- Numbers first: move this section above the cards and make it class="stats lead". -->
     <section class="stats">
-      <div class="stat"><b>42%</b><span>what this number measures, in a few words</span></div>
+      <div class="stat"><b>42%</b><span>what this number measures</span></div>
       <div class="stat"><b>1,280</b><span>what this number measures</span></div>
       <div class="stat"><b>3×</b><span>what this number measures</span></div>
     </section>

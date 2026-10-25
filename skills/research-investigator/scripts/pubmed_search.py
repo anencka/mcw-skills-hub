@@ -348,15 +348,21 @@ def parse_article(article: ET.Element) -> Optional[dict]:
         if pagination is not None:
             pages = pagination.findtext("MedlinePgn", "")
 
-        # DOI and other IDs
+        # DOI and PMC id: the article's own. Its ELocationID first, then the top-level
+        # PubmedData/ArticleIdList -- never ".//ArticleIdList", which also reaches into the
+        # reference list and returned a cited paper's DOI.
         doi = ""
         pmc = ""
-        for id_elem in article.findall(".//ArticleIdList/ArticleId"):
+        for loc in article_elem.findall("ELocationID"):
+            if loc.get("EIdType") == "doi" and loc.get("ValidYN", "Y") == "Y" and (loc.text or "").strip():
+                doi = loc.text.strip()
+                break
+        for id_elem in article.findall("PubmedData/ArticleIdList/ArticleId"):
             id_type = id_elem.get("IdType", "")
-            if id_type == "doi":
-                doi = id_elem.text or ""
-            elif id_type == "pmc":
-                pmc = id_elem.text or ""
+            if id_type == "doi" and not doi:
+                doi = (id_elem.text or "").strip()
+            elif id_type == "pmc" and not pmc:
+                pmc = (id_elem.text or "").strip()
 
         # MeSH terms
         mesh_terms = []
