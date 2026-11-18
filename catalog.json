@@ -123,7 +123,7 @@
     {
       "name": "email-and-scheduling",
       "description": "Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage \u2014 in the operator's voice, never auto-send, protected information only as the policy permits.",
-      "version": "2.3.0",
+      "version": "2.4.1",
       "category": "communication",
       "tags": [
         "email",
@@ -312,7 +312,7 @@
     {
       "name": "onboarding-interview",
       "description": "Interview the operator one question at a time to build their work-profile portfolio (~/work-profile/*.md). Runs the core three files on first use; fills the rest on demand. Use on first contact, when a profile file is missing/thin, or when the operator says \"onboard me\" / \"let's do <file>\".",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "category": "onboarding",
       "tags": [
         "onboarding",
