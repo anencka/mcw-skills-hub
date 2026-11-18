@@ -36,7 +36,7 @@ onboarding. The other seven are filled on demand or when a domain skill first ne
 5. Rank them by priority right now. Anything stalled or blocked?
 *Cover each project the user names — don't force a number.*
 
-## team-and-relationships.md — professional only, NO PHI
+## team-and-relationships.md — professional only (colleagues, not patients)
 1. Who are the 5–8 people you interact with most? Names and roles.
 2. [Per person] What's the relationship, and how do you interact — meetings, async, project-based?
 3. [Per person] What do they need from you, and you from them?
@@ -74,7 +74,7 @@ onboarding. The other seven are filled on demand or when a domain skill first ne
 3. What do you hate? Where's your reaction strong — meeting types, jargon, output formats?
 4. Personal constraints affecting work — travel, schedule, health — only what you're comfortable sharing?
 5. When an AI produces something for you, your formatting preferences — length, structure, tone?
-*Enough after 4–5. The no-PHI/no-secrets rule is already in the file; confirm it, don't relitigate.*
+*Enough after 4–5. The no-secrets rule and the protected-information rule are already in the file; confirm them, don't relitigate.*
 
 ## domain-knowledge.md
 1. Your areas of genuine expertise — what you could teach?

@@ -1,7 +1,7 @@
 ---
 name: onboarding-interview
 description: Interview the operator one question at a time to build their work-profile portfolio (~/work-profile/*.md). Runs the core three files on first use; fills the rest on demand. Use on first contact, when a profile file is missing/thin, or when the operator says "onboard me" / "let's do <file>".
-version: 2.1.0
+version: 2.1.1
 metadata:
   hermes:
     tags: [onboarding, profile, context, portfolio, setup]
@@ -49,7 +49,7 @@ Don't try to capture everything in one sitting. The portfolio is living and impr
 ## Procedure (per file)
 1. **Read the file first.** Note what's already filled; plan to ask only about the gaps.
 2. **Set up (once, at the start of a session):** say in one sentence what you're doing and that
-   answers are saved to `~/work-profile/` (local files, not shared, no PHI). Invite "skip" on
+   answers are saved to `~/work-profile/` (local files, not shared; no secrets, and PHI only where this deployment is cleared for it). Invite "skip" on
    anything.
 3. **Interview one question at a time.** Use the question bank in
    `references/interview-questions.md` for this file. **Ask exactly one question, then stop and
@@ -84,8 +84,9 @@ the domain skills relevant to their work, and note the remaining profile files f
   they carry a marker precisely because they are prompts, not answers — see above.)
 - **Don't interrogate.** Accept partial answers and move on; the portfolio is living.
 - **Don't re-ask** what's already in the files.
-- **Never record PHI, credentials, or anything flagged sensitive.** Confirm the no-PHI boundary;
-  don't relitigate it.
+- **Never record credentials or anything flagged sensitive.** Record PHI only where the deployment's
+  protected-information rule (SOUL, rule 2) permits it — the profile rarely needs any.
+  Don't relitigate the boundary.
 - On the reaction pass, push **once**, not twice.
 
 ## Verification

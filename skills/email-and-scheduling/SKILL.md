@@ -1,7 +1,7 @@
 ---
 name: email-and-scheduling
 description: Read, search, and (with approval) send email from the agent's own mailbox using the himalaya CLI, plus meeting prep and task triage — in the operator's voice, never auto-send, protected information only as the policy permits.
-version: 2.3.0
+version: 2.4.0
 metadata:
   hermes:
     tags: [email, scheduling, communication, admin]
@@ -55,6 +55,14 @@ credentials.
   ```
 - **Reply in a thread (APPROVAL-GATED):** `himalaya template reply <id>` generates a quoted reply
   template; edit the body, then pipe it to `himalaya template send`. Same draft-then-approve rule.
+- **Email to people outside this deployment (ALWAYS queued for approval):** if
+  `/opt/broker/send-relay.identity.json` exists, this deployment can send through the
+  organization's own mail system under a fixed agent identity. Use the `external` account:
+  `himalaya -a external template send` with `To:` / `Subject:` / body — plain text, no
+  attachments. Do **not** write `From:` or `Reply-To:`; the deployment sets both (the file shows
+  them: mail goes out from the agent's address and replies go to the operator). The send is
+  never immediate: it lands in the operator's Outbox and goes only when they approve it there —
+  say so, and do not retry. The default account cannot reach outside addresses.
 - **Inbound push — the email gateway (separate, autonomous):** when enabled (Settings → "Inbound
   email"), the gateway polls IMAP and **auto-replies in-thread via SMTP** to allow-listed senders
   (`EMAIL_ALLOWED_USERS`) — that loop is the operator's deliberate, pre-authorized automation, run by
